@@ -12,6 +12,7 @@ import requests
 from requests.auth import HTTPDigestAuth
 import json
 import os
+import pprint
 
 class Atlas_API_Request(object):
     """
@@ -147,9 +148,17 @@ if __name__ == "__main__":
             projects = requester.get_projects(org["id"])
             for project_count, project in enumerate(projects, 1):
                 print_atlas_item(project_count, "Proj", project, 1)
-                clusters = requester.get_clusters(project["id"])
+                try:
+                    clusters = requester.get_clusters(project["id"])
+                except requests.exceptions.HTTPError as e:
+                    pprint.pprint(e)
+                    continue
                 for cluster_count, cluster in enumerate(clusters, 1):
-                    print_atlas_cluster(cluster_count, "cluster", cluster, 2)
+                    try:
+                        print_atlas_cluster(cluster_count, "cluster", cluster, 2)
+                    except requests.exceptions.HTTPError as e:
+                        pprint.pprint(e)
+                        continue
 
 
     if args.pause_cluster_name:
