@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 List Orgs, Projects and Clusters (OPC) for
 a MongoDB Atlas account denoted by a username
@@ -14,6 +15,7 @@ from requests.auth import HTTPDigestAuth
 import json
 import os
 import pprint
+import sys
 
 class Atlas_API_Request(object):
     """

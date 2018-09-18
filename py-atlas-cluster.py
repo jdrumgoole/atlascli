@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Dump Orgs, Projects and Clusters (OPC) for
 a MongoDB Atlas account denoted by a username
@@ -116,6 +118,7 @@ if __name__ == "__main__":
     parser.add_argument("--username", help="MongoDB Atlas username")
     parser.add_argument("--apikey", help="MongoDB Atlas API key")
     parser.add_argument("--project_id", help="specify project for cluster that is to be paused")
+    parser.add_argument("--org_id", help="specify an organisation to limit what is listed")
     parser.add_argument("--pause", dest="pause_cluster_name", help="pause named cluster in project specified by --project_id")
     parser.add_argument("--resume",  dest="resume_cluster_name", help="resume named cluster in project specified by --project_id")
     parser.add_argument("--list", default=False, action="store_true", help="List of the complete org hierarchy")
@@ -141,7 +144,13 @@ if __name__ == "__main__":
     requester = Atlas_API_Request(username, apikey)
 
     if args.list:
-        orgs = requester.get_orgs()
+        if args.org_id:
+            org = requester.get_one_org(args.org_id)
+            orgs=[]
+            orgs.append(org)
+        else:
+            orgs = requester.get_orgs()
+
         for org_count, org in enumerate(orgs, 1):
             print_atlas_item(org_count, "Org", org)
             projects = requester.get_projects(org["id"])
