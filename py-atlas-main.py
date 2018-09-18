@@ -65,17 +65,17 @@ class Atlas_API_Request(object):
         return "/groups/" + project_id + "/clusters/" + cluster_name
 
     def get_orgs(self):
-            return requester.get_dict(resource_url="/orgs")["results"]
+            return self.get_dict(resource_url="/orgs")["results"]
 
     def get_one_org(self, org_id):
-        return requester.get_dict(resource_url="/orgs/{}".format(org_id))
+        return self.get_dict(resource_url="/orgs/{}".format(org_id))
 
     def get_projects(self, org_id):
-        projects = requester.get_dict("/orgs/{}/groups".format(org_id))["results"]
+        projects = self.get_dict("/orgs/{}/groups".format(org_id))["results"]
         return projects
 
     def get_one_project(self, project_id):
-        return requester.get_dict(resource_url="/groups/{}".format(args.project_id))
+        return self.get_dict(resource_url="/groups/{}".format(args.project_id))
 
 
     def get_clusters(self, project_id):
@@ -92,7 +92,7 @@ class Atlas_API_Request(object):
             print("Pausing cluster: '{}'".format(cluster["name"]))
             assert cluster["paused"] == False
             pause_doc = {"paused" : True}
-            requester.patch(requester.cluster_url(org_id, cluster["name"]), pause_doc)
+            self.patch(requester.cluster_url(org_id, cluster["name"]), pause_doc)
 
     def resume_cluster(self, org_id, cluster):
 
@@ -102,7 +102,7 @@ class Atlas_API_Request(object):
             print("Resuming cluster: '{}'".format(cluster["name"]))
             assert cluster["paused"] == True
             pause_doc = {"paused":False}
-            requester.patch(requester.cluster_url(org_id, cluster["name"]), pause_doc)
+            self.patch(requester.cluster_url(org_id, cluster["name"]), pause_doc)
 
 def print_atlas_item(count, title, item, indent=0):
     print(" {}{}. {}: '{}' {}".format(" " * indent, count, title, item["name"], item["id"]))
