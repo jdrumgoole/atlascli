@@ -15,6 +15,7 @@ from requests.auth import HTTPDigestAuth
 import json
 import os
 import pprint
+import sys
 
 class Atlas_API_Request(object):
     """
@@ -51,7 +52,6 @@ class Atlas_API_Request(object):
                             auth=self._auth
                             )
         p.raise_for_status()
-
 
     def get_json(self, resource_url):
         return self.get(resource_url).json()
@@ -92,8 +92,8 @@ class Atlas_API_Request(object):
         else:
             print("Pausing cluster: '{}'".format(cluster["name"]))
             assert cluster["paused"] == False
-            pause_doc = {"paused" : True}
-            requester.patch(requester.cluster_url(org_id, cluster["name"]), pause_doc)
+            pause_doc = {"paused": True}
+            requester.patch(self.cluster_url(org_id, cluster["name"]), pause_doc)
 
     def resume_cluster(self, org_id, cluster):
 
@@ -102,14 +102,17 @@ class Atlas_API_Request(object):
         else:
             print("Resuming cluster: '{}'".format(cluster["name"]))
             assert cluster["paused"] == True
-            pause_doc = {"paused":False}
-            requester.patch(requester.cluster_url(org_id, cluster["name"]), pause_doc)
+            pause_doc = {"paused": False}
+            self.patch(requester.cluster_url(org_id, cluster["name"]), pause_doc)
+
+def quote(s):
+    return "'{}',".format(s)
 
 def print_atlas_item(count, title, item, indent=0):
-    print(" {}{}. {}: '{}' {}".format(" " * indent, count, title, item["name"], item["id"]))
+    print(" {}{:3}. {:5}: {:25} id={:>24}".format(" " * indent, count,  title, quote(item["name"]), item["id"]))
 
 def print_atlas_cluster(count, title, item, indent=0):
-    print(" {}{}. {}: '{}' {} paused={}".format(" " * indent, count, title, item["name"], item["id"], item["paused"]))
+    print(" {}{:3}. {:5}: {:25} id={:24} paused={}".format(" " * indent, count, title, quote(item["name"]), item["id"], item["paused"]))
 
 if __name__ == "__main__":
 
@@ -143,10 +146,10 @@ if __name__ == "__main__":
 
     requester = Atlas_API_Request(username, apikey)
 
+    orgs=[]
     if args.list:
         if args.org_id:
             org = requester.get_one_org(args.org_id)
-            orgs=[]
             orgs.append(org)
         else:
             orgs = requester.get_orgs()

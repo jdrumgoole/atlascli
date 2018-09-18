@@ -104,11 +104,14 @@ class Atlas_API_Request(object):
             pause_doc = {"paused":False}
             self.patch(requester.cluster_url(org_id, cluster["name"]), pause_doc)
 
+def quote(s):
+    return "'{}',".format(s)
+
 def print_atlas_item(count, title, item, indent=0):
-    print(" {}{}. {}: '{}' {}".format(" " * indent, count, title, item["name"], item["id"]))
+    print(" {}{:3}. {:5}: {:25} id={:>24}".format(" " * indent, count,  title, quote(item["name"]), item["id"]))
 
 def print_atlas_cluster(count, title, item, indent=0):
-    print(" {}{}. {}: '{}' {} paused={}".format(" " * indent, count, title, item["name"], item["id"], item["paused"]))
+    print(" {}{:3}. {:5}: {:25} id={:24} paused={}".format(" " * indent, count, title, quote(item["name"]), item["id"], item["paused"]))
 
 if __name__ == "__main__":
 
