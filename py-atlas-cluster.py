@@ -109,10 +109,10 @@ def quote(s):
     return "'{}',".format(s)
 
 def print_atlas_item(count, title, item, indent=0):
-    print(" {}{:3}. {:5}: {:25} id={:>24}".format(" " * indent, count,  title, quote(item["name"]), item["id"]))
+    print(" {}{}. {:5}: {:25} id={:>24}".format(" " * indent, count,  title, quote(item["name"]), item["id"]))
 
 def print_atlas_cluster(count, title, item, indent=0):
-    print(" {}{:3}. {:5}: {:25} id={:24} paused={}".format(" " * indent, count, title, quote(item["name"]), item["id"], item["paused"]))
+    print(" {}{}. {:5}: {:25} id={:24} paused={}".format(" " * indent, count, title, quote(item["name"]), item["id"], item["paused"]))
 
 if __name__ == "__main__":
 
@@ -122,8 +122,8 @@ if __name__ == "__main__":
     parser.add_argument("--apikey", help="MongoDB Atlas API key")
     parser.add_argument("--project_id", help="specify project for cluster that is to be paused")
     parser.add_argument("--org_id", help="specify an organisation to limit what is listed")
-    parser.add_argument("--pause", dest="pause_cluster_name", help="pause named cluster in project specified by --project_id")
-    parser.add_argument("--resume",  dest="resume_cluster_name", help="resume named cluster in project specified by --project_id")
+    parser.add_argument("--pause", default=[], dest="pause_cluster_name", action="append", help="pause named cluster in project specified by --project_id")
+    parser.add_argument("--resume", default=[], dest="resume_cluster_name", action="append", help="resume named cluster in project specified by --project_id")
     parser.add_argument("--list", default=False, action="store_true", help="List of the complete org hierarchy")
 
     args = parser.parse_args()
@@ -171,10 +171,10 @@ if __name__ == "__main__":
                         pprint.pprint(e)
                         continue
 
-    if args.pause_cluster_name:
-        cluster = requester.get_one_cluster(args.project_id, args.pause_cluster_name)
+    for i in args.pause_cluster_name:
+        cluster = requester.get_one_cluster(args.project_id, i)
         requester.pause_cluster(args.project_id, cluster)
 
-    if args.resume_cluster_name:
-        cluster = requester.get_one_cluster(args.project_id, args.resume_cluster_name)
+    for i in args.resume_cluster_name:
+        cluster = requester.get_one_cluster(args.project_id, i)
         requester.resume_cluster(args.project_id, cluster)
