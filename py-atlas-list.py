@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--username", help="MongoDB Atlas username")
     parser.add_argument("--apikey", help="MongoDB Atlas API key")
-    parser.add_argument("--org_id", help="specify an organisation to limit what is listed")
+    parser.add_argument("--org_id", help="specify an organization to limit what is listed")
 
     args = parser.parse_args()
 
