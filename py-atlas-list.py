@@ -22,7 +22,7 @@ def quote(s):
 
 
 def print_atlas_item(count, title, item, indent=0):
-    print(" {}{:3}. {:5}: {:25} id={:>24}".format(" " * indent, count,  title, quote(item["name"]), item["id"]))
+        print(" {}{:3}. {:5}: {:25} id={:>24}".format(" " * indent, count,  title, quote(item["name"]), item["id"]))
 
 
 def print_atlas_cluster(count, title, item, indent=0):
@@ -39,6 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("--orgs", default=True, help="List all the orgs for a user")
     parser.add_argument("--projects", help="List projects for an org")
     parser.add_argument("--clusters", help="List clusters for a project")
+    parser.add_argument("--output", help="Write output to a file")
 
     args = parser.parse_args()
 

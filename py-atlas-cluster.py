@@ -17,7 +17,8 @@ import os
 import pprint
 import sys
 
-class Atlas_API_Request(object):
+
+class AtlasAPIRequest(object):
     """
     Basic API class for accessing MongoDB Atlas Assets
     Note that this doesn't follow links right now so it will only get
@@ -33,22 +34,21 @@ class Atlas_API_Request(object):
         self._apikey = apikey
         self._print_urls = print_urls
 
-        self._auth  = HTTPDigestAuth(self._username, self._apikey)
-
+        self._auth = HTTPDigestAuth(self._username, self._apikey)
 
     def get(self, resource_url):
-        r = requests.get( Atlas_API_Request.BASE_URL+resource_url,
-                          headers=Atlas_API_Request.HEADERS,
-                          auth=self._auth)
+        r = requests.get(AtlasAPIRequest.BASE_URL+resource_url,
+                         headers=AtlasAPIRequest.HEADERS,
+                         auth=self._auth)
         if self._print_urls:
             print("request URL: '{}'".format(r.url))
         r.raise_for_status()
         return r
 
     def patch(self, resource_url, patch_doc):
-        p = requests.patch( Atlas_API_Request.BASE_URL+resource_url,
+        p = requests.patch( AtlasAPIRequest.BASE_URL+resource_url,
                             json=patch_doc,
-                            headers=Atlas_API_Request.HEADERS,
+                            headers=AtlasAPIRequest.HEADERS,
                             auth=self._auth
                             )
         p.raise_for_status()
@@ -60,24 +60,29 @@ class Atlas_API_Request(object):
         return self.get(resource_url).text
 
     def get_dict(self, resource_url):
-        t= self.get_text(resource_url)
-        return json.loads(t)
+        try:
+            t = self.get_text(resource_url)
+            return json.loads(t)
+        except requests.exceptions.HTTPError as e:
+            print(f"HTTP Request failed:'{e}'")
+            sys.exit(1)
 
-    def cluster_url(self, project_id, cluster_name):
+    @staticmethod
+    def cluster_url(project_id, cluster_name):
         return "/groups/" + project_id + "/clusters/" + cluster_name
 
     def get_orgs(self):
-            return requester.get_dict(resource_url="/orgs")["results"]
+            return self.get_dict(resource_url="/orgs")["results"]
 
     def get_one_org(self, org_id):
-        return requester.get_dict(resource_url="/orgs/{}".format(org_id))
+        return self.get_dict(resource_url="/orgs/{}".format(org_id))
 
     def get_projects(self, org_id):
-        projects = requester.get_dict("/orgs/{}/groups".format(org_id))["results"]
+        projects = self.get_dict("/orgs/{}/groups".format(org_id))["results"]
         return projects
 
     def get_one_project(self, project_id):
-        return requester.get_dict(resource_url="/groups/{}".format(args.project_id))
+        return self.get_dict(resource_url="/groups/{}".format(args.project_id))
 
     def get_clusters(self, project_id):
         return self.get_dict("/groups/" + project_id + "/clusters")["results"]
@@ -93,26 +98,59 @@ class Atlas_API_Request(object):
             print("Pausing cluster: '{}'".format(cluster["name"]))
             assert cluster["paused"] == False
             pause_doc = {"paused": True}
-            requester.patch(self.cluster_url(org_id, cluster["name"]), pause_doc)
+            self.patch(self.cluster_url(org_id, cluster["name"]), pause_doc)
 
     def resume_cluster(self, org_id, cluster):
 
-        if cluster["paused"] == False:
-            print("Cluster: '{}' is already running. Nothing to do".format(cluster["name"]))
-        else:
+        if cluster["paused"]:
             print("Resuming cluster: '{}'".format(cluster["name"]))
-            assert cluster["paused"] == True
             pause_doc = {"paused": False}
             self.patch(requester.cluster_url(org_id, cluster["name"]), pause_doc)
+        else:
+            print("Cluster: '{}' is already running. Nothing to do".format(cluster["name"]))
+
 
 def quote(s):
-    return "'{}',".format(s)
+    return f"'{s}'"
+
+
+def print_header():
+    print("{:26}{:26}{:26}{:5}".format("Organisation", "Project", "Cluster", "Paused/Running"))
+
+
+def print_atlas(org=None, project=None, cluster=None, paused=None):
+    atlas_name = ""
+
+    if org:
+        atlas_name += "{:26}".format(org)
+
+    if project:
+        atlas_name += "{:26}".format(project)
+
+    if cluster:
+        atlas_name += "{:26}".format(cluster)
+
+    if cluster:
+        if paused:
+            atlas_name += "{:4}".format("P")
+        else:
+            atlas_name += "{:4}".format("R")
+
+    print(atlas_name)
+
 
 def print_atlas_item(count, title, item, indent=0):
     print(" {}{}. {:5}: {:25} id={:>24}".format(" " * indent, count,  title, quote(item["name"]), item["id"]))
 
+
 def print_atlas_cluster(count, title, item, indent=0):
-    print(" {}{}. {:5}: {:25} id={:24} paused={}".format(" " * indent, count, title, quote(item["name"]), item["id"], item["paused"]))
+    print(" {}{}. {:5}: {:25} id={:24} paused={}".format(" " * indent,
+                                                         count,
+                                                         title,
+                                                         quote(item["name"]),
+                                                         item["id"],
+                                                         item["paused"]))
+
 
 if __name__ == "__main__":
 
@@ -125,7 +163,7 @@ if __name__ == "__main__":
     parser.add_argument("--pause", default=[], dest="pause_cluster_name", action="append", help="pause named cluster in project specified by --project_id")
     parser.add_argument("--resume", default=[], dest="resume_cluster_name", action="append", help="resume named cluster in project specified by --project_id")
     parser.add_argument("--list", default=False, action="store_true", help="List of the complete org hierarchy")
-
+    parser.add_argument("--ids", default=False, action="store_true", help="Report IDs as opposed to names")
     args = parser.parse_args()
 
     if args.username:
@@ -144,7 +182,7 @@ if __name__ == "__main__":
             print( "you must specify an apikey (via --apikey or te env ATLAS_APIKEY)")
             sys.exit(1)
 
-    requester = Atlas_API_Request(username, apikey)
+    requester = AtlasAPIRequest(username, apikey)
 
     orgs=[]
     if args.list:
@@ -154,11 +192,12 @@ if __name__ == "__main__":
         else:
             orgs = requester.get_orgs()
 
+        print_header()
         for org_count, org in enumerate(orgs, 1):
-            print_atlas_item(org_count, "Org", org)
+            # print_atlas(f"Org:{org['id']}")
             projects = requester.get_projects(org["id"])
             for project_count, project in enumerate(projects, 1):
-                print_atlas_item(project_count, "Proj", project, 1)
+                # print_atlas(f"Project:{project['id']}")
                 try:
                     clusters = requester.get_clusters(project["id"])
                 except requests.exceptions.HTTPError as e:
@@ -166,15 +205,21 @@ if __name__ == "__main__":
                     continue
                 for cluster_count, cluster in enumerate(clusters, 1):
                     try:
-                        print_atlas_cluster(cluster_count, "cluster", cluster, 2)
+                        if args.ids:
+                            print_atlas(org["id"], project["id"], cluster["name"], cluster["paused"])
+                        else:
+                            print_atlas(org["name"], project["name"], cluster["name"], cluster["paused"])
+
                     except requests.exceptions.HTTPError as e:
                         pprint.pprint(e)
                         continue
 
     for i in args.pause_cluster_name:
-        cluster = requester.get_one_cluster(args.project_id, i)
-        requester.pause_cluster(args.project_id, cluster)
+        if args.project_id:
+            cluster = requester.get_one_cluster(args.project_id, i)
+            requester.pause_cluster(args.project_id, cluster)
 
     for i in args.resume_cluster_name:
-        cluster = requester.get_one_cluster(args.project_id, i)
-        requester.resume_cluster(args.project_id, cluster)
+        if args.project_id:
+            cluster = requester.get_one_cluster(args.project_id, i)
+            requester.resume_cluster(args.project_id, cluster)
