@@ -7,6 +7,9 @@ name = "pypi"
 requests = "*"
 mongodb-atlas-api = {editable = true,path = "."}
 mkdocs = "*"
+setuptools = "*"
+pipenv = "*"
+pytest = "*"
 
 [dev-packages]
 pytest = ">=3.6"

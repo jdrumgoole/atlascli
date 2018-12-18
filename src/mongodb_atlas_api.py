@@ -10,7 +10,9 @@ import requests
 import os
 
 
-class MongoDBAtlasAPI(object):
+# noinspection PyPep8Naming
+
+class Atlas_API(object):
     """
     Basic API class for accessing MongoDB Atlas Assets
     Note that this doesn't follow links right now so it will only get
@@ -41,8 +43,6 @@ class MongoDBAtlasAPI(object):
             self._api_key = os.getenv("ATLAS_APIKEY")
             if self._api_key is None:
                 raise ValueError("you must specify an apikey (try using the environment variable ATLAS_APIKEY)")
-            else:
-                self._api_key = api_key
 
         self._print_urls = print_urls
 
@@ -54,10 +54,15 @@ class MongoDBAtlasAPI(object):
         if resource_url.startswith("http"):
             url = resource_url
         else:
-            url = MongoDBAtlasAPI.BASE_URL+resource_url
+            url = Atlas_API.BASE_URL+resource_url
+
+        assert self._api_key is not None
+        assert self._api_key != ""
+        assert self._username is not None
+        assert self._username != ""
 
         r = requests.get(url=url,
-                         headers=MongoDBAtlasAPI.HEADERS,
+                         headers=Atlas_API.HEADERS,
                          auth=self._auth)
         if self._print_urls:
             print("request URL: '{}'".format(r.url))
@@ -65,9 +70,9 @@ class MongoDBAtlasAPI(object):
         return r
 
     def patch(self, resource_url, patch_doc):
-        p = requests.patch(MongoDBAtlasAPI.BASE_URL + resource_url,
+        p = requests.patch(Atlas_API.BASE_URL + resource_url,
                            json=patch_doc,
-                           headers=MongoDBAtlasAPI.HEADERS,
+                           headers=Atlas_API.HEADERS,
                            auth=self._auth
                            )
         p.raise_for_status()
@@ -104,8 +109,8 @@ class MongoDBAtlasAPI(object):
     def get_one_org(self, org_id):
         return self.get_dict(f"/orgs/{org_id}")
 
-    def get_projects(self, org):
-        yield from self.get_linked_data(f"/orgs/{org['id']}/groups")
+    def get_projects(self, org_id):
+        yield from self.get_linked_data(f"/orgs/{org_id}/groups")
 
     def get_one_project(self, project_id):
         return self.get_dict(f"/groups/{project_id}")
@@ -114,22 +119,24 @@ class MongoDBAtlasAPI(object):
         yield from self.get_linked_data(f"/groups/{project_id}/clusters")
 
     def get_one_cluster(self, project_id, cluster_name):
-        return self.get_dict(MongoDBAtlasAPI.cluster_url(project_id, cluster_name))
+        return self.get_dict(Atlas_API.cluster_url(project_id, cluster_name))
 
     def pause_cluster(self, org_id, cluster):
 
+        name = cluster['name']
         if cluster["paused"]:
-            print(f"Cluster: {cluster['name']} is already paused. Nothing to do")
+            print(f"Cluster: '{name}' is already paused. Nothing to do")
         else:
-            print(f"Pausing cluster: {cluster['name']}")
+            print(f"Pausing cluster: '{name}'")
             pause_doc = {"paused": True}
-            self.patch(MongoDBAtlasAPI.cluster_url(org_id, cluster["name"]), pause_doc)
+            self.patch(Atlas_API.cluster_url(org_id, name), pause_doc)
 
     def resume_cluster(self, org_id, cluster):
 
+        name = cluster['name']
         if not cluster["paused"]:
-            print(f"Cluster: {cluster['name']} is already running. Nothing to do")
+            print(f"Cluster: '{name}' is already running. Nothing to do")
         else:
-            print(f"Resuming cluster: {cluster['name']}")
+            print(f"Resuming cluster: '{name}'")
             pause_doc = {"paused": False}
-            self.patch(MongoDBAtlasAPI.cluster_url(org_id, cluster["name"]), pause_doc)
+            self.patch(Atlas_API.cluster_url(org_id, name), pause_doc)
