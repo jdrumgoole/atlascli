@@ -5,8 +5,11 @@ name = "pypi"
 
 [packages]
 requests = "*"
+mongodb-atlas-api = {editable = true,path = "."}
+mkdocs = "*"
 
 [dev-packages]
+pytest = ">=3.6"
 
 [requires]
 python_version = "3.6"

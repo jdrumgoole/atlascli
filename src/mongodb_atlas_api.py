@@ -7,6 +7,8 @@ Basic Python API to some Atlas Services
 
 from requests.auth import HTTPDigestAuth
 import requests
+import os
+
 
 class MongoDBAtlasAPI(object):
     """
@@ -19,15 +21,32 @@ class MongoDBAtlasAPI(object):
     """
 
     BASE_URL = "https://cloud.mongodb.com/api/atlas/v1.0"
-    HEADERS  = { "Accept"       : "application/json",
-                 "Content-Type" : "application/json" }
+    HEADERS = {"Accept": "application/json",
+               "Content-Type": "application/json"}
 
-    def __init__(self, username, apikey, print_urls=None ):
-        self._username = username
-        self._apikey = apikey
+    def __init__(self, username=None, api_key=None, print_urls=None):
+
+        if username:
+            self._username = username
+        else:
+            username = os.getenv("ATLAS_USERNAME")
+            if username is None:
+                raise ValueError("you must specify a username (try using the environment variable ATLAS_USERNAME)")
+            else:
+                self._username = username
+
+        if api_key:
+            self._api_key = api_key
+        else:
+            self._api_key = os.getenv("ATLAS_APIKEY")
+            if self._api_key is None:
+                raise ValueError("you must specify an apikey (try using the environment variable ATLAS_APIKEY)")
+            else:
+                self._api_key = api_key
+
         self._print_urls = print_urls
 
-        self._auth  = HTTPDigestAuth(self._username, self._apikey)
+        self._auth = HTTPDigestAuth(self._username, self._api_key)
 
     def get(self, resource_url):
 
@@ -46,7 +65,7 @@ class MongoDBAtlasAPI(object):
         return r
 
     def patch(self, resource_url, patch_doc):
-        p = requests.patch(Atlas_API.BASE_URL + resource_url,
+        p = requests.patch(MongoDBAtlasAPI.BASE_URL + resource_url,
                            json=patch_doc,
                            headers=MongoDBAtlasAPI.HEADERS,
                            auth=self._auth
@@ -67,7 +86,7 @@ class MongoDBAtlasAPI(object):
             for i in doc["results"]:
                 yield i
         else:
-            raise ValueError( f"No 'results' field in '{doc}'")
+            raise ValueError(f"No 'results' field in '{doc}'")
         links = doc['links']
         last_link = links[-1]
         # print(links)
@@ -75,9 +94,9 @@ class MongoDBAtlasAPI(object):
         if "rel" in last_link and "next" == last_link["rel"]:
             yield from self.get_linked_data(last_link["href"])
 
-
-    def cluster_url(self, project_id, cluster_name):
-        return "/groups/" + project_id + "/clusters/" + cluster_name
+    @staticmethod
+    def cluster_url(project_id, cluster_name):
+        return f"/groups/{project_id}/clusters/{cluster_name}"
 
     def get_orgs(self):
         yield from self.get_linked_data("/orgs")
@@ -86,7 +105,7 @@ class MongoDBAtlasAPI(object):
         return self.get_dict(f"/orgs/{org_id}")
 
     def get_projects(self, org):
-        yield from self.get_linked_data("/orgs/{}/groups".format(org["id"]))
+        yield from self.get_linked_data(f"/orgs/{org['id']}/groups")
 
     def get_one_project(self, project_id):
         return self.get_dict(f"/groups/{project_id}")
@@ -95,22 +114,22 @@ class MongoDBAtlasAPI(object):
         yield from self.get_linked_data(f"/groups/{project_id}/clusters")
 
     def get_one_cluster(self, project_id, cluster_name):
-        return self.get_dict(self.cluster_url(project_id, cluster_name))
+        return self.get_dict(MongoDBAtlasAPI.cluster_url(project_id, cluster_name))
 
     def pause_cluster(self, org_id, cluster):
 
         if cluster["paused"]:
-            print("Cluster: '{}' is already paused. Nothing to do".format(cluster["name"]))
+            print(f"Cluster: {cluster['name']} is already paused. Nothing to do")
         else:
-            print("Pausing cluster: '{}'".format(cluster["name"]))
+            print(f"Pausing cluster: {cluster['name']}")
             pause_doc = {"paused": True}
-            self.patch(self.cluster_url(org_id, cluster["name"]), pause_doc)
+            self.patch(MongoDBAtlasAPI.cluster_url(org_id, cluster["name"]), pause_doc)
 
     def resume_cluster(self, org_id, cluster):
 
         if not cluster["paused"]:
-            print("Cluster: '{}' is already running. Nothing to do".format(cluster["name"]))
+            print(f"Cluster: {cluster['name']} is already running. Nothing to do")
         else:
-            print("Resuming cluster: '{}'".format(cluster["name"]))
+            print(f"Resuming cluster: {cluster['name']}")
             pause_doc = {"paused": False}
-            self.patch(self.cluster_url(org_id, cluster["name"]), pause_doc)
+            self.patch(MongoDBAtlasAPI.cluster_url(org_id, cluster["name"]), pause_doc)
