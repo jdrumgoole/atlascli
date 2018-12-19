@@ -11,57 +11,48 @@ Joe.Drumgoole@mongodb.com
 """
 import argparse
 import requests
-from requests.auth import HTTPDigestAuth
 import os
 import pprint
 import sys
-import json
-from mongodb_atlas_api import Atlas_API
+
+from mongodb_atlas_api import AtlasAPI, AtlasAPIFormatter
 
 
+class ParseError(ValueError):
+    pass
 
 
-def quote(s):
-    return f"'{s}'"
+def parse_id(s, sep=":"):
+    '''
+
+    :param s: A sting of the form <id1>:<id2> used to specify an ID tuple
+    typically used to specify a project and cluster_name.
+    :return: id1,id2
+
+    Throws ParseError if strings do not split on a sep of ':'.
+    '''
+
+    id1,seperator,id2 = s.partition(sep)
+
+    if seperator != sep:
+        raise ParseError(f"Bad seperator '{seperator}'in {s}")
+    return id1, id2
 
 
-def print_header():
-    print("{:26}{:26}{:26}{:5}".format("Organisation", "Project", "Cluster", "Paused/Running"))
-
-
-def print_atlas(org=None, project=None, cluster=None, paused=None):
-    atlas_name = ""
-
-    if org:
-        atlas_name += "{:26}".format(org)
-
-    if project:
-        atlas_name += "{:26}".format(project)
-
-    if cluster:
-        atlas_name += "{:26}".format(cluster)
-
-    if cluster:
-        if paused:
-            atlas_name += "{:4}".format("P")
-        else:
-            atlas_name += "{:4}".format("R")
-
-    print(atlas_name)
-
-
-def print_atlas_item(count, title, item, indent=0):
-    print(" {}{}. {:5}: {:25} id={:>24}".format(" " * indent, count,  title, quote(item["name"]), item["id"]))
-
-
-def print_atlas_cluster(count, title, item, indent=0):
-    print(" {}{}. {:5}: {:25} id={:24} paused={}".format(" " * indent,
-                                                         count,
-                                                         title,
-                                                         quote(item["name"]),
-                                                         item["id"],
-                                                         item["paused"]))
-
+def cluster_list_apply(api, clusters, op_func):
+    for i in clusters:
+        try:
+            project_id, cluster_name = parse_id(i)
+        except ParseError:
+            print(f"Error: Can't parse '{i}'")
+            continue
+        try:
+            cluster = api.get_one_cluster(project_id, cluster_name)
+            op_func(project_id, cluster)
+        except requests.exceptions.HTTPError as e:
+            print("Error:Atlas API request failed")
+            print(e)
+            continue
 
 if __name__ == "__main__":
 
@@ -69,18 +60,33 @@ if __name__ == "__main__":
 
     parser.add_argument("--username", help="MongoDB Atlas username")
     parser.add_argument("--apikey", help="MongoDB Atlas API key")
-    parser.add_argument("--project_id", help="specify project for cluster that is to be paused")
-    parser.add_argument("--org_id", help="specify an organisation to limit what is listed")
-    parser.add_argument("--pause", default=[], dest="pause_cluster_name", action="append", help="pause named cluster in project specified by --project_id")
-    parser.add_argument("--resume", default=[], dest="resume_cluster_name", action="append", help="resume named cluster in project specified by --project_id")
-    parser.add_argument("--list", default=False, action="store_true", help="List of the complete org hierarchy")
-    parser.add_argument("--ids", default=False, action="store_true", help="Report IDs as opposed to names")
+
+    parser.add_argument("--org_id", 
+                        help="specify an organisation to limit what is listed")
+    parser.add_argument("--pause", default=[], dest="pause_cluster",
+                        action="append", 
+                        help="pause named cluster in project specified by project_id:cluster_name")
+    parser.add_argument("--resume", default=[], 
+                        dest="resume_cluster", action="append",
+                        help="resume named cluster in project specified by project_id:cluster_name")
+    parser.add_argument("--list", default=False, action="store_true", 
+                        help="List of the complete org hierarchy")
+    parser.add_argument("--ids", default=False, action="store_true", 
+                        help="Report IDs as opposed to names")
+
+
+    parser.add_argument('--cluster', default=[], dest="cluster_detail", 
+                        action="append", 
+                        help="list all elements for for project_id:cluster_name")
+    parser.add_argument("--project_id", default=[], dest="project_detail",
+                        action="append",
+                        help="specify project for cluster that is to be paused")
     args = parser.parse_args()
 
     if args.username:
         username = args.username
     else:
-        username = os.getenv( "ATLAS_USERNAME")
+        username = os.getenv("ATLAS_USERNAME")
         if username is None:
             print( "you must specify a username (via --username or the env ATLAS_USERNAME)")
             sys.exit(10)
@@ -93,44 +99,58 @@ if __name__ == "__main__":
             print( "you must specify an apikey (via --apikey or te env ATLAS_APIKEY)")
             sys.exit(1)
 
-    requester = Atlas_API(username, apikey)
+    api = AtlasAPI(username, apikey)
+    formatter = AtlasAPIFormatter(api)
 
-    orgs=[]
+    orgs = []
     if args.list:
         if args.org_id:
-            org = requester.get_one_org(args.org_id)
+            org = api.get_one_org(args.org_id)
             orgs.append(org)
         else:
-            orgs = requester.get_orgs()
+            orgs = api.get_orgs()
 
-        print_header()
-        for org_count, org in enumerate(orgs, 1):
-            # print_atlas(f"Org:{org['id']}")
-            projects = requester.get_projects(org['id'])
-            for project_count, project in enumerate(projects, 1):
-                # print_atlas(f"Project:{project['id']}")
-                try:
-                    clusters = requester.get_clusters(project["id"])
-                except requests.exceptions.HTTPError as e:
-                    pprint.pprint(e)
-                    continue
-                for cluster_count, cluster in enumerate(clusters, 1):
-                    try:
-                        if args.ids:
-                            print_atlas(org["id"], project["id"], cluster["name"], cluster["paused"])
-                        else:
-                            print_atlas(org["name"], project["name"], cluster["name"], cluster["paused"])
+        for i in orgs:
+            formatter.print_cluster_summary_header()
+            formatter.print_org_summary(i, args.ids)
 
-                    except requests.exceptions.HTTPError as e:
-                        pprint.pprint(e)
-                        continue
+        # print_header()
+        # for org_count, org in enumerate(orgs, 1):
+        #     # print_atlas(f"Org:{org['id']}")
+        #     projects = api.get_projects(org['id'])
+        #     for project_count, project in enumerate(projects, 1):
+        #         # print_atlas(f"Project:{project['id']}")
+        #         try:
+        #             clusters = api.get_clusters(project["id"])
+        #         except requests.exceptions.HTTPError as e:
+        #             pprint.pprint(e)
+        #             continue
+        #         for cluster_count, cluster in enumerate(clusters, 1):
+        #             try:
+        #                 if args.ids:
+        #                     print_atlas(org["id"], project["id"], cluster["name"], cluster["paused"])
+        #                 else:
+        #                     print_atlas(org["name"], project["name"], cluster["name"], cluster["paused"])
+        #
+        #             except requests.exceptions.HTTPError as e:
+        #                 pprint.pprint(e)
+        #                 continue
 
-    for i in args.pause_cluster_name:
-        if args.project_id:
-            cluster = requester.get_one_cluster(args.project_id, i)
-            requester.pause_cluster(args.project_id, cluster)
-
-    for i in args.resume_cluster_name:
-        if args.project_id:
-            cluster = requester.get_one_cluster(args.project_id, i)
-            requester.resume_cluster(args.project_id, cluster)
+    cluster_list_apply(api, args.pause_cluster, api.pause_cluster)
+    cluster_list_apply(api, args.resume_cluster, api.resume_cluster)
+    # for i in args.resume_cluster:
+    #     try:
+    #         project_id, cluster_name = parse_id(i)
+    #     except ParseError:
+    #         print(f"Error: Can't parse '{i}'")
+    #         continue
+    #     cluster = api.get_one_cluster(project_id, i)
+    #     api.resume_cluster(project_id, cluster)
+            
+    for i in args.cluster_detail:
+        project_id,sep,cluster_name = i.partition(":")
+        if len(project_id) == len(i):
+            print(f"Can't parse '{i}' as <project>:<cluster>")
+            continue
+        cluster = api.get_one_cluster(project_id, cluster_name)
+        pprint.pprint(cluster)

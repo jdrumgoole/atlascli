@@ -8,11 +8,12 @@ Basic Python API to some Atlas Services
 from requests.auth import HTTPDigestAuth
 import requests
 import os
+import pprint
 
 
 # noinspection PyPep8Naming
 
-class Atlas_API(object):
+class AtlasAPI(object):
     """
     Basic API class for accessing MongoDB Atlas Assets
     Note that this doesn't follow links right now so it will only get
@@ -54,7 +55,7 @@ class Atlas_API(object):
         if resource_url.startswith("http"):
             url = resource_url
         else:
-            url = Atlas_API.BASE_URL+resource_url
+            url = AtlasAPI.BASE_URL + resource_url
 
         assert self._api_key is not None
         assert self._api_key != ""
@@ -62,7 +63,7 @@ class Atlas_API(object):
         assert self._username != ""
 
         r = requests.get(url=url,
-                         headers=Atlas_API.HEADERS,
+                         headers=AtlasAPI.HEADERS,
                          auth=self._auth)
         if self._print_urls:
             print("request URL: '{}'".format(r.url))
@@ -70,9 +71,9 @@ class Atlas_API(object):
         return r
 
     def patch(self, resource_url, patch_doc):
-        p = requests.patch(Atlas_API.BASE_URL + resource_url,
+        p = requests.patch(AtlasAPI.BASE_URL + resource_url,
                            json=patch_doc,
-                           headers=Atlas_API.HEADERS,
+                           headers=AtlasAPI.HEADERS,
                            auth=self._auth
                            )
         p.raise_for_status()
@@ -119,7 +120,7 @@ class Atlas_API(object):
         yield from self.get_linked_data(f"/groups/{project_id}/clusters")
 
     def get_one_cluster(self, project_id, cluster_name):
-        return self.get_dict(Atlas_API.cluster_url(project_id, cluster_name))
+        return self.get_dict(AtlasAPI.cluster_url(project_id, cluster_name))
 
     def pause_cluster(self, org_id, cluster):
 
@@ -129,7 +130,7 @@ class Atlas_API(object):
         else:
             print(f"Pausing cluster: '{name}'")
             pause_doc = {"paused": True}
-            self.patch(Atlas_API.cluster_url(org_id, name), pause_doc)
+            self.patch(AtlasAPI.cluster_url(org_id, name), pause_doc)
 
     def resume_cluster(self, org_id, cluster):
 
@@ -139,4 +140,73 @@ class Atlas_API(object):
         else:
             print(f"Resuming cluster: '{name}'")
             pause_doc = {"paused": False}
-            self.patch(Atlas_API.cluster_url(org_id, name), pause_doc)
+            self.patch(AtlasAPI.cluster_url(org_id, name), pause_doc)
+
+
+class AtlasAPIFormatter(object):
+
+    def __init__(self, api):
+        self._api = api
+        self._spacing = 24
+
+    @staticmethod
+    def quote(s):
+        return f"'{s}'"
+
+    @staticmethod
+    def print_cluster_summary_header():
+        print("{:24} {:24} {:24}{:4}".format("Organisation", "Project", "Cluster", "Paused/Running"))
+
+    @staticmethod
+    def print_cluster_summary(org=None, project=None, cluster=None, paused=None, sep=" "):
+
+        summary = f"{org:24}{sep}{project:24}{sep}{cluster:24}"
+
+        if cluster:
+            if paused:
+                summary += "{:4}".format("P")
+            else:
+                summary += "{:4}".format("R")
+
+        print(summary)
+
+    # @staticmethod
+    # def print_item(count, title, item, indent=0):
+    #     print(" {}{}. {:5}: {:25} id={:>24}".format(" " * indent, count, title, quote(item["name"]), item["id"]))
+    #
+    # def print_clusterx_summary(count, title, item, indent=0):
+    #     print(" {}{}. {:5}: {:25} id={:24} paused={}".format(" " * indent,
+    #                                                          count,
+    #                                                          title,
+    #                                                          Atlas_API_Formatter.quote(item["name"]),
+    #                                                          item["id"],
+    #                                                          item["paused"]))
+
+    def print_org_summary(self, org, ids=None):
+        # print_atlas(f"Org:{org['id']}")
+        projects = self._api.get_projects(org["id"])
+        for project_count, project in enumerate(projects, 1):
+            # print_atlas(f"Project:{project['id']}")
+            try:
+                clusters = self._api.get_clusters(project["id"])
+            except requests.exceptions.HTTPError as e:
+                pprint.pprint(e)
+                continue
+            for cluster_count, cluster in enumerate(clusters, 1):
+                try:
+                    if ids:
+                        self.print_cluster_summary(org['id'],
+                                                   project["id"],
+                                                   cluster["name"],
+                                                   cluster["paused"],
+                                                   sep=":")
+                    else:
+                        self.print_cluster_summary(org["name"],
+                                                   project["name"],
+                                                   cluster["name"],
+                                                   cluster["paused"],
+                                                   sep=" ")
+
+                except requests.exceptions.HTTPError as e:
+                    pprint.pprint(e)
+                    continue
