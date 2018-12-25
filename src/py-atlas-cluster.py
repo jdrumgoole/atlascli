@@ -73,14 +73,17 @@ if __name__ == "__main__":
                         help="List of the complete org hierarchy")
     parser.add_argument("--ids", default=False, action="store_true", 
                         help="Report IDs as opposed to names")
-
-
     parser.add_argument('--cluster', default=[], dest="cluster_detail", 
                         action="append", 
                         help="list all elements for for project_id:cluster_name")
     parser.add_argument("--project_id", default=[], dest="project_detail",
                         action="append",
                         help="specify project for cluster that is to be paused")
+
+    parser.add_argument("--output", dest="output_filename",
+                        default=__file__ + ".out",
+                        help="Send output to a file [default: %(default)]")
+    
     args = parser.parse_args()
 
     if args.username:
