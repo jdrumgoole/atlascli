@@ -12,18 +12,18 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = 'MongoDB Atlas API'
+NAME = 'atlasapi'
 DESCRIPTION = 'Python API to the MongoDB Atlas REST Interface'
-URL = 'https://github.com/jdrumgoole/mongodb_atlas_api'
+URL = 'https://github.com/jdrumgoole/atlasapi'
 EMAIL = 'joe@joedrumgoole.com'
 AUTHOR = 'Joe Drumgoole'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = 0.1
+VERSION = 0.1.1
 
 # What packages are required for this module to be executed?
-REQUIRED = [
-    # 'requests', 'maya', 'records',
-]
+#REQUIRED = [
+#    'requests', 'pytest'
+#]
 
 # What packages are optional?
 EXTRAS = {

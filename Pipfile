@@ -10,6 +10,7 @@ mkdocs = "*"
 setuptools = "*"
 pipenv = "*"
 pytest = "*"
+dateutils = "*"
 
 [dev-packages]
 pytest = ">=3.6"

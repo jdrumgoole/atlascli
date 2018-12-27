@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 """
-Dump Orgs, Projects and Clusters (OPC) for
-a MongoDB Atlas account denoted by a username
-and an API Key.
+MongoDB Atlas API (atlasapi)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Allow pausing and resuming of named clusters
+Python API to MongoDB Atlas.
 
-Joe.Drumgoole@mongodb.com
+Author: Joe.Drumgoole@mongodb.com
 """
 import argparse
 import requests
@@ -15,7 +14,7 @@ import os
 import pprint
 import sys
 
-from mongodb_atlas_api import AtlasAPI, AtlasAPIFormatter
+from atlasapi.api import API, APIFormatter
 
 
 class ParseError(ValueError):
@@ -23,16 +22,21 @@ class ParseError(ValueError):
 
 
 def parse_id(s, sep=":"):
-    '''
+    """
 
     :param s: A sting of the form <id1>:<id2> used to specify an ID tuple
     typically used to specify a project and cluster_name.
+    :param sep: Seperator string used for two parts of s. Default is ':'.
     :return: id1,id2
 
     Throws ParseError if strings do not split on a sep of ':'.
-    '''
 
-    id1,seperator,id2 = s.partition(sep)
+    >>> parse_id("xxxx:yyyy")
+    ('xxxx', 'yyyy')
+    >>>
+    """
+
+    id1, seperator, id2 = s.partition(sep)
 
     if seperator != sep:
         raise ParseError(f"Bad seperator '{seperator}'in {s}")
@@ -54,6 +58,7 @@ def cluster_list_apply(api, clusters, op_func):
             print(e)
             continue
 
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -61,6 +66,8 @@ if __name__ == "__main__":
     parser.add_argument("--username", help="MongoDB Atlas username")
     parser.add_argument("--apikey", help="MongoDB Atlas API key")
 
+    parser.add_argument("--print_urls", default=False, action="store_true",
+                        help="Print URLS constructed by API")
     parser.add_argument("--org_id", 
                         help="specify an organisation to limit what is listed")
     parser.add_argument("--pause", default=[], dest="pause_cluster",
@@ -79,10 +86,9 @@ if __name__ == "__main__":
     parser.add_argument("--project_id", default=[], dest="project_detail",
                         action="append",
                         help="specify project for cluster that is to be paused")
-
     parser.add_argument("--output", dest="output_filename",
-                        default=__file__ + ".out",
-                        help="Send output to a file [default: %(default)]")
+                        default="atlasapi.out",
+                        help="Send output to a file [ default: %(default)s]")
     
     args = parser.parse_args()
 
@@ -102,8 +108,8 @@ if __name__ == "__main__":
             print( "you must specify an apikey (via --apikey or te env ATLAS_APIKEY)")
             sys.exit(1)
 
-    api = AtlasAPI(username, apikey)
-    formatter = AtlasAPIFormatter(api)
+    api = API(username, apikey, args.print_urls)
+    formatter = APIFormatter(api)
 
     orgs = []
     if args.list:
@@ -113,9 +119,11 @@ if __name__ == "__main__":
         else:
             orgs = api.get_orgs()
 
-        for i in orgs:
-            formatter.print_cluster_summary_header()
-            formatter.print_org_summary(i, args.ids)
+        for i, index in enumerate(orgs, 1):
+            print(index)
+            formatter.print_org(i)
+            #formatter.print_cluster_summary_header()
+            #formatter.print_org_summary(i, args.ids)
 
         # print_header()
         # for org_count, org in enumerate(orgs, 1):
