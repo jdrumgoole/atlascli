@@ -23,6 +23,7 @@ class AtlasResource(object):
             self._resource["created"] = parser.parse( self._resource["created"])
         self._timestamp = datetime.utcnow()
 
+    @property
     def timestamp(self):
         return self._timestamp
 
@@ -41,7 +42,7 @@ class AtlasResource(object):
         return "{}({})".format(self.__class__.__name__, self._resource)
 
 
-class AtlasOrganization(object):
+class AtlasOrganization(AtlasResource):
 
     def __init__(self, org):
         super().__init__(org)
@@ -65,6 +66,9 @@ class AtlasOrganizationAPI(AtlasAPIMixin):
         super().__init__(username=username, api_key=api_key)
 
     def get_organization(self, organization_id):
+        try:
+            org = self.get_dict(f"/orgs/{organization_id}"
+        except HTT
         return AtlasOrganization(self.get_dict(f"/orgs/{organization_id}"))
 
     @lru_cache(maxsize=500)
@@ -73,7 +77,9 @@ class AtlasOrganizationAPI(AtlasAPIMixin):
 
     def get_organisations(self):
         for i in self.get_linked_data("/orgs"):
-            yield self.get_organization(i["id"])
+            try:
+                yield self.get_organization(i["id"])
+            except HTT
 
     def __repr__(self):
         return "{}('{}', '{}')".format(self.__class__.__name__,
@@ -111,7 +117,7 @@ class AtlasClusterAPI(AtlasAPIMixin):
 
     def get_clusters(self, project_id):
         for i in self.get_linked_data(f"/groups/{project_id}/clusters"):
-            yield  self.get_cluster(i["name"])
+            yield self.get_cluster(project_id, i["name"])
 
 
 

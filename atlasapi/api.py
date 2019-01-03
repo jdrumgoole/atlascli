@@ -107,8 +107,7 @@ class API(object):
         return f"/groups/{project_id}/clusters/{cluster_name}"
 
     def get_orgs(self):
-        for i in self.get_linked_data("/orgs"):
-            yield self.get_one_org(i["id"])
+        yield from self.get_linked_data("/orgs")
 
     def get_one_org(self, org_id):
         return self.get_dict(f"/orgs/{org_id}")
@@ -158,18 +157,18 @@ class APIFormatter(object):
 
     @staticmethod
     def print_cluster_summary_header():
-        print("{:24} {:24} {:24}{:4}".format("Organisation", "Project", "Cluster", "Paused/Running"))
+        print("{:24} {:24} {:25}{:5}".format("Organisation", "Project", "Cluster", "Paused/Running"))
 
     @staticmethod
     def print_cluster_summary(org=None, project=None, cluster=None, paused=None, sep=" "):
 
-        summary = f"{org:24}{sep}{project:24}{sep}{cluster:24}"
+        summary = f"{org:24}{sep}{project:24}{sep}{cluster:25}"
 
         if cluster:
             if paused:
-                summary += "{:4}".format("P")
+                summary += "{:5}".format("P")
             else:
-                summary += "{:4}".format("R")
+                summary += "{:5}".format("R")
 
         print(summary)
 
@@ -186,10 +185,11 @@ class APIFormatter(object):
     #                                                          item["paused"]))
 
     def print_org(self, org):
-        print(org)
+        print(f"{org['id']}:{org['name']}")
 
-    def print_org_summary(self, org, ids=None):
+    def print_org_details(self, org, ids=None):
         # print_atlas(f"Org:{org['id']}")
+        self.print_cluster_summary_header()
         projects = self._api.get_projects(org["id"])
         for project_count, project in enumerate(projects, 1):
             # print_atlas(f"Project:{project['id']}")
@@ -203,7 +203,7 @@ class APIFormatter(object):
                     if ids:
                         self.print_cluster_summary(org['id'],
                                                    project["id"],
-                                                   cluster["name"],
+                                                   cluster["id"],
                                                    cluster["paused"],
                                                    sep=":")
                     else:

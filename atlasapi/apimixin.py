@@ -7,6 +7,7 @@ Basic Python API to MongoDB Atlas Services
 """
 
 from requests.auth import HTTPDigestAuth
+from requests.exceptions import HTTPError
 import requests
 import os
 import pprint
@@ -15,6 +16,8 @@ import pprint
 class AtlasAuthenticationError(ValueError):
     pass
 
+class AtlasRequestError(ValueError):
+    pass
 
 class AtlasAPIMixin(object):
     """
@@ -70,12 +73,16 @@ class AtlasAPIMixin(object):
         assert self._username is not None
         assert self._username != ""
 
-        r = requests.get(url=url,
-                         headers=self.ATLAS_HEADERS,
-                         auth=self._auth)
-        if self._print_urls:
-            print("request URL: '{}'".format(r.url))
-        r.raise_for_status()
+        try:
+            print("blah")
+            r = requests.get(url=url,
+                             headers=self.ATLAS_HEADERS,
+                             auth=self._auth)
+            if self._print_urls:
+                print("request URL: '{}'".format(r.url))
+            r.raise_for_status()
+        except requests.exceptions.HTTPError:
+            raise AtlasRequestError(f"Atlas Request Error: '{r.url}'")
         return r
 
     def patch(self, resource_url, patch_doc):
@@ -91,7 +98,9 @@ class AtlasAPIMixin(object):
         return self.get(resource_url).text
 
     def get_dict(self, resource_url):
-        return self.get(resource_url).json()
+        try:
+            return self.get(resource_url).json()
+        except HT
 
     def get_linked_data(self, resource):
         # print("get_linked_data")
