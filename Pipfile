@@ -8,7 +8,6 @@ requests = "*"
 mongodb-atlas-api = {editable = true,path = "."}
 mkdocs = "*"
 setuptools = "*"
-pipenv = "*"
 pytest = "*"
 dateutils = "*"
 

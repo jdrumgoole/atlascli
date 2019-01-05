@@ -74,7 +74,6 @@ class AtlasAPIMixin(object):
         assert self._username != ""
 
         try:
-            print("blah")
             r = requests.get(url=url,
                              headers=self.ATLAS_HEADERS,
                              auth=self._auth)
