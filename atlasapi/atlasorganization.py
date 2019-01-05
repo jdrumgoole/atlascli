@@ -14,13 +14,15 @@ from datetime import datetime
 from functools import lru_cache
 from dateutil import parser
 from atlasapi.apimixin import AtlasAPIMixin
+# from requests import exceptions
+
 
 class AtlasResource(object):
 
     def __init__(self, resource):
         self._resource = resource
         if "created" in self._resource:  # convert date string to datetime obj
-            self._resource["created"] = parser.parse( self._resource["created"])
+            self._resource["created"] = parser.parse(self._resource["created"])
         self._timestamp = datetime.utcnow()
 
     @property
@@ -66,9 +68,6 @@ class AtlasOrganizationAPI(AtlasAPIMixin):
         super().__init__(username=username, api_key=api_key)
 
     def get_organization(self, organization_id):
-        try:
-            org = self.get_dict(f"/orgs/{organization_id}"
-        except HTT
         return AtlasOrganization(self.get_dict(f"/orgs/{organization_id}"))
 
     @lru_cache(maxsize=500)
@@ -77,9 +76,7 @@ class AtlasOrganizationAPI(AtlasAPIMixin):
 
     def get_organisations(self):
         for i in self.get_linked_data("/orgs"):
-            try:
-                yield self.get_organization(i["id"])
-            except HTT
+            yield self.get_organization(i["id"])
 
     def __repr__(self):
         return "{}('{}', '{}')".format(self.__class__.__name__,
@@ -102,6 +99,7 @@ class AtlasProjectAPI(AtlasAPIMixin):
     def get_projects(self, organization_id):
         for i in self.get_linked_data(f"/orgs/{organization_id}/groups"):
             yield self.get_project(i["id"])
+
 
 class AtlasClusterAPI(AtlasAPIMixin):
 

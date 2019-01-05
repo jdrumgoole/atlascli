@@ -113,6 +113,7 @@ if __name__ == "__main__":
     api = API(username, apikey, args.print_urls)
     formatter = APIFormatter(api)
 
+    org_api = A
     try:
         orgs = []
         if args.list:

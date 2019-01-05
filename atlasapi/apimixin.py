@@ -16,8 +16,10 @@ import pprint
 class AtlasAuthenticationError(ValueError):
     pass
 
+
 class AtlasRequestError(ValueError):
     pass
+
 
 class AtlasAPIMixin(object):
     """
@@ -43,7 +45,7 @@ class AtlasAPIMixin(object):
         else:
             username = os.getenv("ATLAS_USERNAME")
             if username is None:
-                raise AtlasAuthenticationError("you must specify a username (try using the environment variable ATLAS_USERNAME)")
+                raise AtlasAuthenticationError("You must specify a username (try using the environment variable ATLAS_USERNAME)")
             else:
                 self._username = username
 
@@ -97,9 +99,7 @@ class AtlasAPIMixin(object):
         return self.get(resource_url).text
 
     def get_dict(self, resource_url):
-        try:
-            return self.get(resource_url).json()
-        except HT
+        return self.get(resource_url).json()
 
     def get_linked_data(self, resource):
         # print("get_linked_data")
