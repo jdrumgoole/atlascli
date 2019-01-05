@@ -14,7 +14,10 @@ import os
 import pprint
 import sys
 
-from atlasapi.api import API, APIFormatter
+from atlasapi.api import AtlasOrganization
+
+from atlasapi.api import AtlasOrganizationAPI
+from atlasapi.errors import AtlasAuthenticationError, AtlasRequestError
 
 
 class ParseError(ValueError):
@@ -110,29 +113,27 @@ if __name__ == "__main__":
             print( "you must specify an apikey (via --apikey or te env ATLAS_APIKEY)")
             sys.exit(1)
 
-    api = API(username, apikey, args.print_urls)
-    formatter = APIFormatter(api)
+    org_api = AtlasOrganizationAPI(username, apikey)
+    #formatter = APIFormatter(api)
 
-    org_api = A
     try:
         orgs = []
         if args.list:
             if args.org_ids:
                 for i in args.org_ids:
-                    org = api.get_one_org(i)
+                    org = org_api.get_organization(i)
                     orgs.append(org)
             else:
-                orgs = api.get_orgs()
+                org_links = org_api.get_organization_links()
 
-            for i, org in enumerate(orgs, 1):
-                print(f"{i}. ", end="")
-                formatter.print_org(org)
+            for i, org_link in enumerate(org_links, 1):
+                print(f"{i}. id:'{org_link['id']}', name:'{org_link['name']}'")
                 if args.org_details:
                     try:
-                        org = api.get_one_org(org["id"])
-                        formatter.print_org_details(org, args.ids)
-                    except requests.exceptions.HTTPError as e:
-                        print(f"Can't get info for organization ID: {org['id']} error:{e}")
+                        org = org_api.get_organization(org_link['id'])
+                        print(org)
+                    except AtlasRequestError as e:
+                        print(f"Can't get info for organization ID: '{org_link['id']}' error:{e}")
 
 
         cluster_list_apply(api, args.pause_cluster, api.pause_cluster)
