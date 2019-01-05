@@ -72,7 +72,7 @@ class AtlasCluster(AtlasResource):
         super().__init__(cluster)
 
 
-class AtlasOrganizationAPI(AtlasAPIMixin):
+class AtlasAPI(AtlasAPIMixin):
 
     def __init__(self, username=None, api_key=None):
         super().__init__(username=username, api_key=api_key)
@@ -88,37 +88,41 @@ class AtlasOrganizationAPI(AtlasAPIMixin):
         return AtlasOrganization(self.get_dict(f"/orgs/{organization_id}"))
 
     def get_organization_links(self):
-        yield from self.get_linked_data("/orgs")
+        yield from self.get_linked_resource("orgs")
 
     def get_organisation_ids(self):
         yield from self.get_ids("orgs")
 
-    def get_organisations(self):
-        for i in self.get_linked_data("/orgs"):
-            yield self.get_organization(i["id"])
+    def get_organisations(self,limit=None):
+        if limit:
+            for i,org in enumerate(self.get_linked_resource("orgs"),1):
+                yield self.get_organization(org["id"])
+                if i == limit:
+                    break
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self._username}', '{self._api_key}')"
 
-
-class AtlasProjectAPI(AtlasAPIMixin):
-
-    def __init__(self, username=None, api_key=None):
-        super().__init__(username=username, api_key=api_key)
-
     def get_project(self, project_id):
-        return AtlasProject(self.get_dict(f"/groups/{project_id}"))
+        try:
+            return AtlasProject(self.get_dict(f"/groups/{project_id}"))
+        except HTTPError as e:
+            raise AtlasRequestError(e)
 
     @lru_cache(maxsize=500)
     def get_cached_project(self, project_id):
         return AtlasProject(self.get_dict(f"/groups/{project_id}"))
 
+    def get_project_links(self):
+        yield from self.get_linked_resource("groups")
+
+    def get_project_ids(self):
+        yield from self.get_ids("groups")
+
     def get_projects(self, organization_id):
         for i in self.get_linked_data(f"/orgs/{organization_id}/groups"):
             yield self.get_project(i["id"])
-
-
-class AtlasClusterAPI(AtlasAPIMixin):
 
     def __init__(self, username=None, api_key=None):
         super().__init__(username=username, api_key=api_key)
@@ -134,5 +138,22 @@ class AtlasClusterAPI(AtlasAPIMixin):
         for i in self.get_linked_data(f"/groups/{project_id}/clusters"):
             yield self.get_cluster(project_id, i["name"])
 
+    def pause_cluster(self, org_id, cluster):
 
+        name = cluster['name']
+        if cluster["paused"]:
+            print(f"Cluster: '{name}' is already paused. Nothing to do")
+        else:
+            print(f"Pausing cluster: '{name}'")
+            pause_doc = {"paused": True}
+            self.patch(API.cluster_url(org_id, name), pause_doc)
 
+    def resume_cluster(self, org_id, cluster):
+
+        name = cluster['name']
+        if not cluster["paused"]:
+            print(f"Cluster: '{name}' is already running. Nothing to do")
+        else:
+            print(f"Resuming cluster: '{name}'")
+            pause_doc = {"paused": False}
+            self.patch(API.cluster_url(org_id, name), pause_doc)

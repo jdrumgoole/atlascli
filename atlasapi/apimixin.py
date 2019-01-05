@@ -102,12 +102,16 @@ class AtlasAPIMixin(object):
                 yield i
         else:
             raise ValueError(f"No 'results' field in '{doc}'")
+
         links = doc['links']
         last_link = links[-1]
         # print(links)
         # print(last_link)
         if "rel" in last_link and "next" == last_link["rel"]:
             yield from self.get_linked_data(last_link["href"])
+
+    def get_linked_resource(self, resource_name):
+        yield from self.get_linked_data(f"/{resource_name}")
 
     def get_ids(self, field):
         for i in self.get_linked_data(f"/{field}"):

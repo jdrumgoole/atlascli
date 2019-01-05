@@ -16,7 +16,7 @@ import sys
 
 from atlasapi.api import AtlasOrganization
 
-from atlasapi.api import AtlasOrganizationAPI
+from atlasapi.api import AtlasAPI
 from atlasapi.errors import AtlasAuthenticationError, AtlasRequestError
 
 
@@ -62,6 +62,17 @@ def cluster_list_apply(api, clusters, op_func):
             continue
 
 
+def print_links(resource_links, resource_item, details=None, counter=1):
+
+    for i, link in enumerate(resource_links, counter):
+        print(f"{i}. id:'{link['id']}', name:'{link['name']}'")
+        if details:
+            try:
+                print(resource_item(link['id']))
+            except AtlasRequestError as e:
+                print(f"Can't get info for resource ID: '{link['id']}' error:{e}")
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -79,13 +90,16 @@ if __name__ == "__main__":
     parser.add_argument("--resume", default=[], 
                         dest="resume_cluster", action="append",
                         help="resume named cluster in project specified by project_id:cluster_name")
-    parser.add_argument("--list", default=False, action="store_true", 
-                        help="List of the complete org hierarchy")
-    parser.add_argument("--org-details", dest="org_details", default=False,
-                        action="store_true", help="Print of details for each organisation [default: %(default)s]")
+    parser.add_argument("--list", default=[], choices=["orgs", "projects", "clusters"],
+                        action="append",
+                        help="List all of the reachable categories")
+    parser.add_argument("--details", default=[], action="append",
+                        choices=["orgs", "projects", "clusters"],
+                        help="Print of details for each organisation [default: %(default)s]")
     parser.add_argument("--ids", default=False, action="store_true", 
                         help="Report IDs as opposed to names")
-    parser.add_argument('--cluster', default=[], dest="cluster_detail", 
+
+    parser.add_argument('--cluster', default=[],
                         action="append", 
                         help="list all elements for for project_id:cluster_name")
     parser.add_argument("--project_id", default=[], dest="project_detail",
@@ -113,31 +127,45 @@ if __name__ == "__main__":
             print( "you must specify an apikey (via --apikey or te env ATLAS_APIKEY)")
             sys.exit(1)
 
-    org_api = AtlasOrganizationAPI(username, apikey)
+    api = AtlasAPI(username, apikey)
+
+    org_details = "orgs" in args.details
+    cluster_details = "clusters" in args.details
+
     #formatter = APIFormatter(api)
 
     try:
-        orgs = []
-        if args.list:
+        org_links = []
+        if "orgs" in args.list:
             if args.org_ids:
                 for i in args.org_ids:
-                    org = org_api.get_organization(i)
-                    orgs.append(org)
+                    org = api.get_organization(i)
+                    print(org)
             else:
-                org_links = org_api.get_organization_links()
+                org_links = api.get_organization_links()
+                print_links(org_links, api.get_organization, org_details)
+            # for i, org_link in enumerate(org_links, 1):
+            #     print(f"{i}. id:'{org_link['id']}', name:'{org_link['name']}'")
+            #     if args.org_details:
+            #         try:
+            #             org = api.get_organization(org_link['id'])
+            #             print(org)
+            #         except AtlasRequestError as e:
+            #             print(f"Can't get info for organization ID: '{org_link['id']}' error:{e}")
+            if "projects" in args.list:
+                project_links = api.get_project_links()
+                print_links(project_links, api.get_project, cluster_details)
 
-            for i, org_link in enumerate(org_links, 1):
-                print(f"{i}. id:'{org_link['id']}', name:'{org_link['name']}'")
-                if args.org_details:
-                    try:
-                        org = org_api.get_organization(org_link['id'])
-                        print(org)
-                    except AtlasRequestError as e:
-                        print(f"Can't get info for organization ID: '{org_link['id']}' error:{e}")
+        elif "projects" in args.list:
+            project_links = api.get_project_links()
+            print_links(project_links, api.get_project, cluster_details)
 
+        if args.pause_cluster:
+            cluster_list_apply(api, args.pause_cluster, api.pause_cluster)
 
-        cluster_list_apply(api, args.pause_cluster, api.pause_cluster)
-        cluster_list_apply(api, args.resume_cluster, api.resume_cluster)
+        if args.resume_cluster:
+            cluster_list_apply(api, args.resume_cluster, api.resume_cluster)
+
         # for i in args.resume_cluster:
         #     try:
         #         project_id, cluster_name = parse_id(i)
@@ -147,12 +175,12 @@ if __name__ == "__main__":
         #     cluster = api.get_one_cluster(project_id, i)
         #     api.resume_cluster(project_id, cluster)
 
-        for i in args.cluster_detail:
+        for i in args.cluster:
             project_id,sep,cluster_name = i.partition(":")
             if len(project_id) == len(i):
                 print(f"Can't parse '{i}' as <project>:<cluster>")
                 continue
-            cluster = api.get_one_cluster(project_id, cluster_name)
+            cluster = api.get_cluster(project_id, cluster_name)
             pprint.pprint(cluster)
     except KeyboardInterrupt:
         print("Ctrl-C: Exiting...")

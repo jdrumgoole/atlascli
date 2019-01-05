@@ -1,40 +1,37 @@
 
 
-from atlasapi.atlasorganization import AtlasOrganizationAPI, AtlasProjectAPI,\
-    AtlasClusterAPI
+from atlasapi.api import AtlasAPI
 
 
 def test_atlas_organization():
 
-    api = AtlasOrganizationAPI()
-    org = api.get_organization("5c23d4d2f2a30b921dd5dd9d")
+    api = AtlasAPI()
+    org = api.get_organization("599eeced9f78f769464d175c")
     assert org is not None
-    assert org.id == "5c23d4d2f2a30b921dd5dd9d"
+    assert org.id == "599eeced9f78f769464d175c"
 
 
 def test_atlas_organisations():
 
-    # Not working
-
-    api = AtlasOrganizationAPI()
-    orgs = api.get_organisations()
-    assert orgs is not None
-    assert list(orgs) is not None
-    assert len(list(orgs)) > 0
+    api = AtlasAPI()
+    orgs = api.get_organisations(limi=200)
+    list_of_orgs = list(orgs)
+    assert list_of_orgs is not None
+    assert len(list_of_orgs) == 200
 
 
 def test_atlas_project():
 
-    api = AtlasProjectAPI()
-    project = api.get_project("5c242f12553855347ce303af")
+    api = AtlasAPI()
+    project = api.get_project("5a141a774e65811a132a8010")
     assert project is not None
-    assert project.id == "5c242f12553855347ce303af"
+    assert project.id == "5a141a774e65811a132a8010"
 
 
 def test_atlas_projects():
 
-    api = AtlasProjectAPI()
-    projects = api.get_projects("5c23d4d2f2a30b921dd5dd9d")
+    api = AtlasAPI()
+    projects = api.get_projects("5a141a774e65811a132a8010")
     assert projects is not None
     assert list(projects) is not None
     assert len(list(projects)) >= 0
@@ -42,17 +39,16 @@ def test_atlas_projects():
 
 def test_atlas_cluster():
 
-    api = AtlasClusterAPI()
-    cluster = api.get_cluster("5c242f12553855347ce303af", "Cluster0")
+    api = AtlasAPI()
+    cluster = api.get_cluster("5a141a774e65811a132a8010", "Foodapedia")
     assert cluster is not None
-    assert cluster.name == "Cluster0"
+    assert cluster.name == "Foodapedia"
+
 
 def test_atlas_clusters():
 
-    # broken
-
-    api = AtlasClusterAPI()
-    clusters = api.get_clusters("5c242f12553855347ce303af")
+    api = AtlasAPI()
+    clusters = api.get_clusters("5a141a774e65811a132a8010")
     assert clusters is not None
     assert list(clusters) is not None
     assert len(list(clusters)) >= 0
