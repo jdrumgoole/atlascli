@@ -5,12 +5,17 @@ Basic Python API to MongoDB Atlas Services
 @Author:Joe.Drumgoole@mongodb.com
 
 """
+import os
+import pprint
+import logging
+from logging import StreamHandler
 
 from requests.auth import HTTPDigestAuth
 import requests
-import os
-import pprint
-from .errors import AtlasRequestError, AtlasAuthenticationError
+
+from .errors import AtlasRequestError, \
+                    AtlasAuthenticationError,\
+                    AtlasEnvironmentError
 
 
 class AtlasAPIMixin(object):
@@ -25,12 +30,13 @@ class AtlasAPIMixin(object):
     ATLAS_HEADERS = {"Accept": "application/json",
                      "Content-Type": "application/json"}
 
-    def __init__(self, username=None, api_key=None, print_urls=None):
+    def __init__(self, username=None, api_key=None, debug=1):
         self._api_key = None
         self._username = None
         self._api_key = None
         self._auth = None
-        self._print_urls = False
+        self._debug = None
+        self._log = None
 
         if username:
             self._username = username
@@ -48,19 +54,32 @@ class AtlasAPIMixin(object):
             if self._api_key is None:
                 raise AtlasAuthenticationError("you must specify an apikey (try using the environment variable ATLAS_APIKEY)")
 
-        self._print_urls = print_urls
+
+        if debug:
+            self._debug = debug
+        else:
+            atlas_debug_env = os.getenv("ATLAS_DEBUG")
+            try:
+                self._debug = int(atlas_debug_env)
+            except ValueError:
+                raise AtlasEnvironmentError(f"Invalid value for ATLAS_DEBUG env: '{atlas_debug_env}'")
+
+        if self._debug:
+            self._log = logging.getLogger(__name__)
 
         # print(self._username)
         # print(self._api_key)
         self._auth = HTTPDigestAuth(self._username, self._api_key)
 
-    def get(self, resource_url):
+    def get(self, resource):
 
+        if self._debug:
+            self._log.debug(f"get({resource})")
         # Need to use the raw URL when getting linked data
-        if resource_url.startswith("http"):
-            url = resource_url
+        if resource.startswith("http"):
+            url = resource
         else:
-            url = self.ATLAS_BASE_URL + resource_url
+            url = self.ATLAS_BASE_URL + resource
 
         assert self._api_key is not None
         assert self._api_key != ""
@@ -71,8 +90,10 @@ class AtlasAPIMixin(object):
             r = requests.get(url=url,
                              headers=self.ATLAS_HEADERS,
                              auth=self._auth)
-            if self._print_urls:
-                print("request URL: '{}'".format(r.url))
+            if self._log:
+                self._log.debug(f"requests.get(url={url}, headers={self.ATLAS_HEADERS}, auth={self._auth})")
+                self._log.debug(f"returns:")
+                self._log.debug(f"\n{pprint.pprint(r.json())}")
             r.raise_for_status()
         except requests.exceptions.HTTPError as e:
             raise AtlasRequestError(e)
@@ -94,7 +115,9 @@ class AtlasAPIMixin(object):
         return self.get(resource_url).json()
 
     def get_linked_data(self, resource):
-        # print("get_linked_data")
+        if self._log:
+            self._log.debug(f"get_linked_data({resource})")
+
         doc = self.get_dict(resource)
 
         if 'results' in doc:
@@ -110,8 +133,8 @@ class AtlasAPIMixin(object):
         if "rel" in last_link and "next" == last_link["rel"]:
             yield from self.get_linked_data(last_link["href"])
 
-    def get_linked_resource(self, resource_name):
-        yield from self.get_linked_data(f"/{resource_name}")
+    def get_linked_resource(self, resource):
+        yield from self.get_linked_data(f"/{resource}")
 
     def get_ids(self, field):
         for i in self.get_linked_data(f"/{field}"):
@@ -124,6 +147,7 @@ class AtlasAPIMixin(object):
     @staticmethod
     def cluster_url(project_id, cluster_name):
         return f"/groups/{project_id}/clusters/{cluster_name}"
+
 
 class APIFormatter(object):
 

@@ -5,3 +5,6 @@ class AtlasAuthenticationError(ValueError):
 
 class AtlasRequestError(ValueError):
     pass
+
+class AtlasEnvironmentError(ValueError):
+    pass

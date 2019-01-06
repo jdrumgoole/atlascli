@@ -13,6 +13,7 @@ import requests
 import os
 import pprint
 import sys
+import logging
 
 from atlasapi.api import AtlasOrganization
 
@@ -108,8 +109,16 @@ if __name__ == "__main__":
     parser.add_argument("--output", dest="output_filename",
                         default="atlasapi.out",
                         help="Send output to a file [default: %(default)s]")
-    
+
+    parser.add_argument("--logging", default=False, action="store_true",
+                        help="Turn on logging at debug level")
     args = parser.parse_args()
+
+    if args.logging:
+        logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                            level=logging.DEBUG)
+
+    logging.debug("logging is on at DEBUG level")
 
     if args.username:
         username = args.username
@@ -130,6 +139,7 @@ if __name__ == "__main__":
     api = AtlasAPI(username, apikey)
 
     org_details = "orgs" in args.details
+    project_details = "projects" in args.details
     cluster_details = "clusters" in args.details
 
     #formatter = APIFormatter(api)
@@ -158,7 +168,7 @@ if __name__ == "__main__":
 
         elif "projects" in args.list:
             project_links = api.get_project_links()
-            print_links(project_links, api.get_project, cluster_details)
+            print_links(project_links, api.get_project, project_details)
 
         if args.pause_cluster:
             cluster_list_apply(api, args.pause_cluster, api.pause_cluster)
