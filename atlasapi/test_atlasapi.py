@@ -1,7 +1,8 @@
 
+import pytest
 
 from atlasapi.api import AtlasAPI
-
+from atlasapi.errors import AtlasInitialisationError
 
 def test_atlas_organization():
 
@@ -18,6 +19,15 @@ def test_atlas_organisations():
     list_of_orgs = list(orgs)
     assert list_of_orgs is not None
     assert len(list_of_orgs) == 200
+
+    with pytest.raises(AtlasInitialisationError):
+        api = AtlasAPI(page_size=0)
+
+    with pytest.raises(AtlasInitialisationError):
+        api = AtlasAPI(page_size=501)
+
+    with pytest.raises(AtlasInitialisationError):
+        api = AtlasAPI(page_size=-1)
 
 
 def test_atlas_project():

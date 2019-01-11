@@ -40,10 +40,10 @@ def parse_id(s, sep=":"):
     >>>
     """
 
-    id1, seperator, id2 = s.partition(sep)
+    id1, separator, id2 = s.partition(sep)
 
     if seperator != sep:
-        raise ParseError(f"Bad seperator '{seperator}'in {s}")
+        raise ParseError(f"Bad separator '{separator}' in {s}")
     return id1, id2
 
 
@@ -72,6 +72,7 @@ def print_links(resource_links, resource_item, details=None, counter=1):
                 print(resource_item(link['id']))
             except AtlasRequestError as e:
                 print(f"Can't get info for resource ID: '{link['id']}' error:{e}")
+    return i
 
 
 if __name__ == "__main__":
@@ -152,8 +153,15 @@ if __name__ == "__main__":
                     org = api.get_organization(i)
                     print(org)
             else:
-                org_links = api.get_organization_links()
-                print_links(org_links, api.get_organization, org_details)
+                index = 1
+                results, link = api.get_organization_links_by_page()
+                index = print_links(results, api.get_organization, org_details, counter=index)
+                while link:
+                    results, link = api.get_organization_links_by_page()
+                    index = print_links(results, api.get_organization, org_details, counter=index+1)
+
+                #org_links = api.get_organization_links()
+                #print_links(org_links, api.get_organization, org_details)
             # for i, org_link in enumerate(org_links, 1):
             #     print(f"{i}. id:'{org_link['id']}', name:'{org_link['name']}'")
             #     if args.org_details:

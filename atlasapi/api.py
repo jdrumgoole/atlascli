@@ -88,14 +88,32 @@ class AtlasAPI(AtlasAPIMixin):
         return AtlasOrganization(self.get_dict(f"/orgs/{organization_id}"))
 
     def get_organization_links(self):
-        yield from self.get_linked_resource("orgs")
+        """
+        A generator that pages through all the results and returns each
+        result an item at a time.
+
+        :return: A generator with the link results.
+        """
+        yield from self.get_resource_by_item("/orgs")
+
+    def get_organization_links_by_page(self):
+        """
+        We provide `get_organization_links_by_page` to allow the client
+        to catch exceptions and retry. With the generator API an exception
+        will mean restarting the generator from scratch.
+
+        :return: A tuple consistent of the list of results and the next
+        URL to call for the next page of results. If there are no more
+        results the URL value will be None.
+        """
+        return self.get_resource_by_page("/orgs")
 
     def get_organisation_ids(self):
         yield from self.get_ids("orgs")
 
-    def get_organisations(self,limit=None):
+    def get_organisations(self, limit=None):
         if limit:
-            for i,org in enumerate(self.get_linked_resource("orgs"),1):
+            for i, org in enumerate(self.get_resource_by_item("/orgs"), 1):
                 yield self.get_organization(org["id"])
                 if i == limit:
                     break
@@ -114,27 +132,24 @@ class AtlasAPI(AtlasAPIMixin):
         return AtlasProject(self.get_dict(f"/groups/{project_id}"))
 
     def get_project_links(self):
-        yield from self.get_linked_resource("groups")
+        yield from self.get_resource_by_item("/groups")
 
     def get_project_ids(self):
         yield from self.get_ids("groups")
 
     def get_projects(self, organization_id):
-        for i in self.get_linked_data(f"/orgs/{organization_id}/groups"):
+        for i in self.get_resource_by_item(f"/orgs/{organization_id}/groups"):
             yield self.get_project(i["id"])
 
-    def __init__(self, username=None, api_key=None):
-        super().__init__(username=username, api_key=api_key)
-
     def get_cluster(self, project_id, cluster_name):
-        return AtlasCluster(self.get_dict(self.cluster_url(project_id, cluster_name)))
+        return AtlasCluster(self.get_dict(f"/groups/{project_id}/clusters/{cluster_name}"))
 
     @lru_cache(maxsize=500)
     def get_cached_cluster(self, project_id, cluster_name):
-        return self.get_dict(self.cluster_url(project_id, cluster_name))
+        return self.get_dict(f"/groups/{project_id}/clusters/{cluster_name}")
 
     def get_clusters(self, project_id):
-        for i in self.get_linked_data(f"/groups/{project_id}/clusters"):
+        for i in self.get_resource_by_item(f"/groups/{project_id}/clusters"):
             yield self.get_cluster(project_id, i["name"])
 
     def pause_cluster(self, org_id, cluster):
@@ -145,7 +160,7 @@ class AtlasAPI(AtlasAPIMixin):
         else:
             print(f"Pausing cluster: '{name}'")
             pause_doc = {"paused": True}
-            self.patch(API.cluster_url(org_id, name), pause_doc)
+            self.patch(f"/groups/{org_id}/clusters/{name}", pause_doc)
 
     def resume_cluster(self, org_id, cluster):
 
@@ -155,4 +170,4 @@ class AtlasAPI(AtlasAPIMixin):
         else:
             print(f"Resuming cluster: '{name}'")
             pause_doc = {"paused": False}
-            self.patch(API.cluster_url(org_id, name), pause_doc)
+            self.patch(f"/groups/{org_id}/clusters/{name}", pause_doc)

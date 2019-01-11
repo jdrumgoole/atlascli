@@ -15,7 +15,8 @@ import requests
 
 from .errors import AtlasRequestError, \
                     AtlasAuthenticationError,\
-                    AtlasEnvironmentError
+                    AtlasEnvironmentError,\
+                    AtlasInitialisationError
 
 
 class AtlasAPIMixin(object):
@@ -30,13 +31,22 @@ class AtlasAPIMixin(object):
     ATLAS_HEADERS = {"Accept": "application/json",
                      "Content-Type": "application/json"}
 
-    def __init__(self, username=None, api_key=None, debug=1):
+    def __init__(self,
+                 username=None,
+                 api_key=None,
+                 page_size=100,
+                 debug=0):
+
         self._api_key = None
         self._username = None
         self._api_key = None
         self._auth = None
         self._debug = None
         self._log = None
+        self._page_size = page_size
+
+        if self._page_size < 1 or self._page_size > 500 :
+            raise AtlasInitialisationError("'page_size' must be between 1 and 500")
 
         if username:
             self._username = username
@@ -58,7 +68,7 @@ class AtlasAPIMixin(object):
         if debug:
             self._debug = debug
         else:
-            atlas_debug_env = os.getenv("ATLAS_DEBUG")
+            atlas_debug_env = os.getenv("ATLAS_DEBUG", 0)
             try:
                 self._debug = int(atlas_debug_env)
             except ValueError:
@@ -114,27 +124,61 @@ class AtlasAPIMixin(object):
     def get_dict(self, resource_url):
         return self.get(resource_url).json()
 
-    def get_linked_data(self, resource):
+    def get_resource_by_page(self, resource):
+
+        results = None
+        next_link = None
+
         if self._log:
-            self._log.debug(f"get_linked_data({resource})")
+            self._log.debug(f"get_list_data_by_page({resource})")
 
         doc = self.get_dict(resource)
 
         if 'results' in doc:
-            for i in doc["results"]:
-                yield i
+            results = doc["results"]
         else:
-            raise ValueError(f"No 'results' field in '{doc}'")
+            raise AtlasRequestError(f"No 'results' field in '{doc}'")
 
         links = doc['links']
         last_link = links[-1]
         # print(links)
         # print(last_link)
         if "rel" in last_link and "next" == last_link["rel"]:
-            yield from self.get_linked_data(last_link["href"])
+            next_link = last_link["href"]
+        else:
+            next_link = None
 
-    def get_linked_resource(self, resource):
-        yield from self.get_linked_data(f"/{resource}")
+        return results, next_link
+
+    def _get_results(self, doc):
+        if 'results' in doc:
+            for i in doc["results"]:
+                yield i
+        else:
+            raise AtlasRequestError(f"No 'results' field in '{doc}'")
+
+    def get_resource_by_item(self, resource, limit=None):
+
+        if self._log:
+            self._log.debug(f"get_linked_data({resource})")
+
+        doc = self.get_dict(resource)
+        yield from self._get_results(doc)
+        links = doc['links']
+        last_link = links[-1]
+
+        while "rel" in last_link and "next" == last_link["rel"]:
+            doc = self.get_dict(last_link["href"])
+            yield from self._get_results(doc)
+            links = doc['links']
+            last_link = links[-1]
+
+        # links = doc['links']
+        # last_link = links[-1]
+        # # print(links)
+        # # print(last_link)
+        # if "rel" in last_link and "next" == last_link["rel"]:
+        #     yield from self.get_resource_by_item(last_link["href"])
 
     def get_ids(self, field):
         for i in self.get_linked_data(f"/{field}"):
@@ -143,10 +187,6 @@ class AtlasAPIMixin(object):
     def get_names(self, field):
         for i in self.get_linked_data(f"/{field}"):
             yield i["name"]
-
-    @staticmethod
-    def cluster_url(project_id, cluster_name):
-        return f"/groups/{project_id}/clusters/{cluster_name}"
 
 
 class APIFormatter(object):
@@ -187,9 +227,6 @@ class APIFormatter(object):
     #                                                          Atlas_API_Formatter.quote(item["name"]),
     #                                                          item["id"],
     #                                                          item["paused"]))
-
-    def print_org(self, org):
-        print(org)
 
     def print_org_summary(self, org, ids=None):
         # print_atlas(f"Org:{org['id']}")
