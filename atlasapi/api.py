@@ -77,6 +77,8 @@ class AtlasAPI(AtlasAPIMixin):
     def __init__(self, username=None, api_key=None):
         super().__init__(username=username, api_key=api_key)
 
+    def create_organization(self, name):
+
     def get_organization(self, organization_id):
         try:
             return AtlasOrganization(self.get_dict(f"/orgs/{organization_id}"))

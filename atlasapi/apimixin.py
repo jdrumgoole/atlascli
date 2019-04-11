@@ -19,7 +19,7 @@ from .errors import AtlasRequestError, \
                     AtlasInitialisationError
 
 
-class AtlasAPIMixin(object):
+class APIMixin(object):
     """
     Basic API class for accessing MongoDB Atlas Assets
 
@@ -27,7 +27,10 @@ class AtlasAPIMixin(object):
     between the API and the UI and are synonyms.
     """
 
-    ATLAS_BASE_URL = "https://cloud.mongodb.com/api/atlas/v1.0"
+    SITE_URL="https://cloud.mongodb.com"
+    API_URL = f"/api/atlas/v1.0"
+    ATLAS_BASE_URL=f"{SITE_URL}{API_URL}"
+
     ATLAS_HEADERS = {"Accept": "application/json",
                      "Content-Type": "application/json"}
 
@@ -81,7 +84,44 @@ class AtlasAPIMixin(object):
         # print(self._api_key)
         self._auth = HTTPDigestAuth(self._username, self._api_key)
 
-    def get(self, resource):
+    def post(self, resource, data):
+
+        if self._debug:
+            self._log.debug(f"post({resource}, {data})")
+
+        try:
+            #print(f"atlas_post:{resource}, {data}")
+            r = requests.post(resource, data=data, headers=self.ATLAS_HEADERS, auth=self._auth)
+            print(r.url)
+            r.raise_for_status()
+            if self._log:
+                self._log.debug(f"returns:")
+                self._log.debug(f"\n{pprint.pprint(r.json())}")
+
+        except requests.exceptions.HTTPError as e:
+            raise AtlasRequestError(e)
+        return r
+
+    def get(self, resource, headers=None, auth=None):
+        if self._debug:
+            self._log.debug(f"get({resource})")
+        # Need to use the raw URL when getting linked data
+
+        assert self._api_key is not None
+        assert self._api_key != ""
+        assert self._username is not None
+        assert self._username != ""
+
+        r = requests.get(resource,
+                         headers=headers,
+                         auth=auth)
+        r.raise_for_status()
+        return r
+
+    def atlas_post(self, resource, data):
+        return self.post(f"{self.ATLAS_BASE_URL}{resource}", data)
+
+    def atlas_get(self,resource):
 
         if self._debug:
             self._log.debug(f"get({resource})")
@@ -97,14 +137,15 @@ class AtlasAPIMixin(object):
         assert self._username != ""
 
         try:
+
             r = requests.get(url=url,
                              headers=self.ATLAS_HEADERS,
                              auth=self._auth)
+            r.raise_for_status()
             if self._log:
-                self._log.debug(f"requests.get(url={url}, headers={self.ATLAS_HEADERS}, auth={self._auth})")
                 self._log.debug(f"returns:")
                 self._log.debug(f"\n{pprint.pprint(r.json())}")
-            r.raise_for_status()
+
         except requests.exceptions.HTTPError as e:
             raise AtlasRequestError(e)
         return r
