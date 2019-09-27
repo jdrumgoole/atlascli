@@ -13,6 +13,7 @@ from logging import StreamHandler
 from requests.auth import HTTPDigestAuth
 import requests
 
+from .atlaskey import AtlasKey
 from .errors import AtlasRequestError, \
                     AtlasAuthenticationError,\
                     AtlasEnvironmentError,\
@@ -35,14 +36,11 @@ class APIMixin(object):
                      "Content-Type": "application/json"}
 
     def __init__(self,
-                 username=None,
-                 api_key=None,
+                 api_key:AtlasKey,
                  page_size=100,
                  debug=0):
 
-        self._api_key = None
-        self._username = None
-        self._api_key = None
+        self._api_key: AtlasKey = api_key
         self._auth = None
         self._debug = None
         self._log = None
@@ -51,22 +49,11 @@ class APIMixin(object):
         if self._page_size < 1 or self._page_size > 500 :
             raise AtlasInitialisationError("'page_size' must be between 1 and 500")
 
-        if username:
-            self._username = username
-        else:
-            username = os.getenv("ATLAS_USERNAME")
-            if username is None:
-                raise AtlasAuthenticationError("You must specify a username (try using the environment variable ATLAS_USERNAME)")
-            else:
-                self._username = username
 
         if api_key:
             self._api_key = api_key
         else:
-            self._api_key = os.getenv("ATLAS_APIKEY")
-            if self._api_key is None:
-                raise AtlasAuthenticationError("you must specify an apikey (try using the environment variable ATLAS_APIKEY)")
-
+            self._api_key = AtlasKey.get_from_env()
 
         if debug:
             self._debug = debug
@@ -82,7 +69,7 @@ class APIMixin(object):
 
         # print(self._username)
         # print(self._api_key)
-        self._auth = HTTPDigestAuth(self._username, self._api_key)
+        self._auth = HTTPDigestAuth(self._api_key.public_key, self._api_key.private_key)
 
     def post(self, resource, data):
 

@@ -1,6 +1,6 @@
 import unittest
 from atlasapi.apimixin import APIMixin
-from atlasapi.errors import AtlasInitialisationError
+from atlasapi.atlaskey import AtlasKey
 
 import requests
 
@@ -8,7 +8,8 @@ class Test_APIMixin(unittest.TestCase):
 
 
     def setUp(self):
-        self._api=APIMixin(username="Joe.Drumgoole", api_key="89c30b7d-d844-483f-bed4-fc195d850e6a", debug=1)
+        key = AtlasKey.get_from_env()
+        self._api=APIMixin(api_key=key, debug=1)
 
     def tearDown(self):
         pass
