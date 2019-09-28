@@ -79,8 +79,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--username", help="MongoDB Atlas username")
-    parser.add_argument("--apikey", help="MongoDB Atlas API key")
+    parser.add_argument("--publickey", help="MongoDB Atlas public API key")
+    parser.add_argument("--privatekey", help="MongoDB Atlas private API key")
 
     parser.add_argument("--print_urls", default=False, action="store_true",
                         help="Print URLS constructed by API")
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     if args.username:
         username = args.username
     else:
-        username = os.getenv("ATLAS_USERNAME")
+        username = os.getenv("ATLAS_PUBLIC_KEY")
         if username is None:
             print( "you must specify a username (via --username or the env ATLAS_USERNAME)")
             sys.exit(10)
