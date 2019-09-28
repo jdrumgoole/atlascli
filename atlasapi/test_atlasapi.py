@@ -4,6 +4,7 @@ import pytest
 from atlasapi.api import AtlasAPI
 from atlasapi.errors import AtlasInitialisationError
 
+
 def test_atlas_organization():
 
     api = AtlasAPI()

@@ -6,7 +6,8 @@ An organisation is a top level artefact. Users can
 create multiple organizations and be members of multiple
 organizations. Each organization can have 0 or more
 projects (also called groups) and each project can have 0 or
-more
+more clusters.
+
 Author:joe@joedrumgoole.com
 """
 
