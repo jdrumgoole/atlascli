@@ -14,13 +14,22 @@ Author:joe@joedrumgoole.com
 from datetime import datetime
 from functools import lru_cache
 import pprint
+from enum import Enum
 
 from dateutil import parser
 from requests.exceptions import HTTPError
 
-from atlasapi.apimixin import APIMixin
-from atlasapi.atlaskey import AtlasKey
+from mongodbatlas.apimixin import APIMixin
+from mongodbatlas.atlaskey import AtlasKey
 
+
+class OutputFormat(Enum):
+
+    SUMMARY = "summary"
+    FULL = "full"
+
+    def __str__(self):
+        return self.value
 
 class AtlasResource(object):
     """
@@ -50,12 +59,14 @@ class AtlasResource(object):
     def summary_string(self):
         return f"id:'{self.id}' name:'{self.name}'"
 
-    def print_summary(self):
-        return self.summary_string()
+    def print_resource(self, format=OutputFormat.SUMMARY):
+        if format is OutputFormat.SUMMARY:
+            print(self.summary_string())
+        else:
+            pprint.pprint(self._resource)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self._resource!r})"
-
 
 class AtlasOrganization(AtlasResource):
 

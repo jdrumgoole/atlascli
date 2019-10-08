@@ -1,5 +1,5 @@
 #
-# Makefile for MongoDB Atlas API (atlasapi)
+# Makefile for MongoDB Atlas API (mongodbatlas)
 #
 
 

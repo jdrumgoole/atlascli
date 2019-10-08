@@ -1,9 +1,9 @@
 
 import pytest
 
-from atlasapi.api import AtlasAPI
-from atlasapi.atlaskey import AtlasKey
-from atlasapi.errors import AtlasInitialisationError
+from mongodbatlas.api import AtlasAPI
+from mongodbatlas.atlaskey import AtlasKey
+from mongodbatlas.errors import AtlasInitialisationError
 
 def test_atlaskey():
 

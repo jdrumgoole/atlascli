@@ -1,8 +1,11 @@
-# Altas API - A Python API for MongoDB Atlas
+# MongoDB Atlas - A Python API for MongoDB Atlas
 
 The MongoDB database as a service offering [Atlas](https://www.mongodb.com/cloud/atlas) provides
 a complete and well documented [REST API](https://docs.atlas.mongodb.com/api/).
 
+## Installation
+
+The easiest way to install the A
 The Python Atlas API wraps the REST API in a more Pythonic
 API based around an ``AtlasAPI`` class. 
 
@@ -13,16 +16,16 @@ The library assumes the existence of two environment variables:
 * `ATLAS_PRIVATE_KEY` : The private key defined by the Atlas programmatic API
 key.
 
-You can create keys on this screen:
+## How to create an Atlas API Key
+You can create keys at the Organization level by selecting the access menu item 
+on the left hand side menu:
 
 ![API Start Screen ](https://raw.githubusercontent.com/jdrumgoole/atlasapi/master/images/api-key-screen.png)
 
 
-Note you have to be at the organisation level.
-
-Once you create a key pay attention to the next screen. If you pick the default you
-will have to add this key explicitly to every project that you want to manage via
-the API.
+Once you create a key you then need to assign it permissions. If you pick the 
+default youwill have to add this key explicitly to every project that you want 
+to manage via the API.
 
 ![API Permissions Screen ](https://raw.githubusercontent.com/jdrumgoole/atlasapi/master/images/api-key-permissions.png)
 
@@ -32,5 +35,14 @@ once so please make sure to take a copy.
 
 ![API Create Key Screen ](https://raw.githubusercontent.com/jdrumgoole/atlasapi/master/images/api-key-create.png)
 
+Not on this screen we obliterate part of the key so it can't been seen. 
 
+Finally you need to whitelist any nodes that are going to originate API requests. 
 
+![API Create Key Screen ](https://raw.githubusercontent.com/jdrumgoole/atlasapi/master/images/api-key-whitelist.png)
+
+You are now ready to start using your API key.
+
+## Using your keys
+
+Both parts of the key required to acc

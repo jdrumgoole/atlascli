@@ -9,3 +9,4 @@ from .api import AtlasOrganization
 from .api import AtlasProject
 from .api import AtlasCluster
 from .api import AtlasKey
+from .api import OutputFormat

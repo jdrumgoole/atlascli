@@ -1,8 +1,8 @@
 import unittest
 import os
 
-from atlasapi.atlaskey import AtlasKey, AtlasEnv
-from atlasapi.errors import AtlasEnvironmentError
+from mongodbatlas.atlaskey import AtlasKey, AtlasEnv
+from mongodbatlas.errors import AtlasEnvironmentError
 
 
 class MyTestCase(unittest.TestCase):

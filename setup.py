@@ -11,11 +11,11 @@ from shutil import rmtree
 
 from setuptools import find_packages, setup, Command
 
-from atlasapi.__version__ import __VERSION__
+from mongodbatlas.__version__ import __VERSION__
 # Package meta-data.
-NAME = 'atlasapi'
+NAME = 'mongodbatlas'
 DESCRIPTION = 'Python API to the MongoDB Atlas REST Interface'
-URL = 'https://github.com/jdrumgoole/atlasapi'
+URL = 'https://github.com/jdrumgoole/MongoDB-Atlas-API'
 EMAIL = 'joe@joedrumgoole.com'
 AUTHOR = 'Joe Drumgoole'
 REQUIRES_PYTHON = '>=3.6.0'
@@ -105,7 +105,7 @@ setup(
     url=URL,
     #packages=find_packages(exclude=('tests',)),
     # If your package is a single module, use this instead of 'packages':
-    py_modules=['atlasapi'],
+    py_modules=['mongodbatlas'],
     package_dir={'': 'src'},
     # entry_points={
     #     'console_scripts': ['mycli=mymodule:cli'],

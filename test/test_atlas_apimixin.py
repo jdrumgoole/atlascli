@@ -1,8 +1,8 @@
 import unittest
 import pprint
 
-from atlasapi.apimixin import APIMixin
-from atlasapi.atlaskey import AtlasKey
+from mongodbatlas.apimixin import APIMixin
+from mongodbatlas.atlaskey import AtlasKey
 
 import requests
 

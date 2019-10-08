@@ -1,7 +1,7 @@
 import unittest
 import pprint
 
-from atlasapi.api import AtlasAPI, AtlasOrganization
+from mongodbatlas.api import AtlasAPI, AtlasOrganization
 
 
 class MyTestCase(unittest.TestCase):

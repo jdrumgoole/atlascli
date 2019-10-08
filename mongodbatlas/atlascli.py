@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-MongoDB Atlas API (atlasapi)
+MongoDB Atlas API (mongodbatlas)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Python API to MongoDB Atlas.
@@ -14,17 +14,26 @@ import os
 import pprint
 import sys
 import logging
+from enum import Enum
 
-from atlasapi.api import AtlasOrganization
+from mongodbatlas.api import AtlasOrganization
 
-from atlasapi.api import AtlasAPI
-from atlasapi.atlaskey import AtlasKey
-from atlasapi.errors import AtlasGetError
+from mongodbatlas.api import AtlasAPI,OutputFormat
+from mongodbatlas.atlaskey import AtlasKey
+from mongodbatlas.errors import AtlasGetError
 
 
 class ParseError(ValueError):
     pass
 
+
+class ResourceType(Enum):
+
+    Project = "projects"
+    Cluster = "clusters"
+
+    def __str__(self):
+        return self.value
 
 def parse_id(s, sep=":"):
     """
@@ -64,18 +73,6 @@ def cluster_list_apply(api, clusters, op_func):
             continue
 
 
-def print_links(resource_links, resource_item, details=None, counter=1):
-
-    for i, link in enumerate(resource_links, counter):
-        print(f"{i}. id:'{link['id']}', name:'{link['name']}'")
-        if details:
-            try:
-                print(resource_item(link['id']))
-            except AtlasGetError as e:
-                print(f"Can't get info for resource ID: '{link['id']}' error:{e}")
-    return i
-
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -94,12 +91,10 @@ if __name__ == "__main__":
     parser.add_argument("--resume", default=[], 
                         dest="resume_cluster", action="append",
                         help="resume named cluster in project specified by project_id:cluster_name")
-    parser.add_argument("--list", default=[], choices=["projects", "clusters"],
+    parser.add_argument("--list", type=ResourceType, default=None, choices=list(ResourceType),
                         action="append",
-                        help="List all of the reachable categories")
-    parser.add_argument("--details", default=[], action="append",
-                        choices=["orgs", "projects", "clusters"],
-                        help="Print of details for each organisation [default: %(default)s]")
+                        help="List all of the reachable categories [default: %(default)s]")
+
     parser.add_argument("--ids", default=False, action="store_true", 
                         help="Report IDs as opposed to names")
 
@@ -109,16 +104,19 @@ if __name__ == "__main__":
     parser.add_argument("--project_id", default=[], dest="project_detail",
                         action="append",
                         help="specify project for cluster that is to be paused")
-    parser.add_argument("--output", dest="output_filename",
-                        default="atlasapi.out",
-                        help="Send output to a file [default: %(default)s]")
-
+    parser.add_argument('--format', type=OutputFormat,
+                        default=OutputFormat.SUMMARY, choices=list(OutputFormat),
+                        help="The format to output data either in a single line "
+                             "summary or a full JSON document [default: %(default)s]")
     parser.add_argument("--logging", default=False, action="store_true",
                         help="Turn on logging at debug level")
-    parser.add_argument("--resource", help="Get resource by URL")
+    parser.add_argument("--resource",
+                        help="Get resource by URL can use a base URL like 'group'"
+                             "or a full URL path")
     parser.add_argument("--itemsperpage", type=int, default=100,
                         help="No of items to return per page [default: %(default)s]")
-
+    parser.add_argument("--pagenum", type=int, default=1,
+                        help="Page to return [default: %(default)s]")
     args = parser.parse_args()
 
     if args.logging:
@@ -147,21 +145,15 @@ if __name__ == "__main__":
 
     api = AtlasAPI(AtlasKey(public_key, private_key))
 
-    org_details = "orgs" in args.details
-    project_details = "projects" in args.details
-    cluster_details = "clusters" in args.details
-
-    #formatter = APIFormatter(api)
-
     if args.resource:
         if args.resource == "root":
             r = api.atlas_get()
         elif args.resource.startswith("http"):
-            r = api.get(args.resource, items_per_page=args.itemsperpage)
+            r = api.get(args.resource, page_num=args.pagenum, items_per_page=args.itemsperpage)
         else:
             if not args.resource.startswith("/"):
                 args.resource = f"/{args.resource}"
-            r=api.atlas_get(args.resource, items_per_page=args.itemsperpage)
+            r=api.atlas_get(args.resource, page_num=args.pagenum, items_per_page=args.itemsperpage)
 
         pprint.pprint(r)
         sys.exit(0)
@@ -169,19 +161,19 @@ if __name__ == "__main__":
         if args.org:
             print("Organisations:")
             for i in api.get_organization():
-                print(i.summary_string())
+                i.print_resource(args.format)
 
-        if "projects" in args.list:
+        if ResourceType.Project in args.list:
             print("Projects:")
             for project in api.get_projects():
-                print(project.summary_string())
+                project.print_resource(args.format)
             #print_links(project_links, api.get_project, project_details)
 
-        if "clusters" in args.list:
+        if ResourceType.Cluster in args.list:
             print("Clusters:")
             for project in api.get_projects():
                 for cluster in api.get_clusters(project.id):
-                    print(cluster.summary_string())
+                    cluster.print_resource(args.format)
 
         if args.pause_cluster:
             cluster_list_apply(api, args.pause_cluster, api.pause_cluster)

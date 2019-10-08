@@ -100,11 +100,17 @@ class APIMixin(object):
         assert self._api_key is not None
         assert self._api_key != ""
 
+        args =""
         if "itemsPerPage" not in resource:
-            resource=resource+f"?itemsPerPage={items_per_page}"
+            args=args+f"?itemsPerPage={items_per_page}"
 
         if "pageNum" not in resource:
-            resource=resource+f"&pageNum={page_num}"
+            if len(args) > 0 :
+                args = args + "&"
+            args=args+f"pageNum={page_num}"
+
+        resource = resource + "/" + args
+
         try:
             r = requests.get(resource,
                              headers=headers,
