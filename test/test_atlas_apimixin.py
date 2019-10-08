@@ -1,4 +1,6 @@
 import unittest
+import pprint
+
 from atlasapi.apimixin import APIMixin
 from atlasapi.atlaskey import AtlasKey
 
@@ -16,17 +18,14 @@ class Test_APIMixin(unittest.TestCase):
 
     def test_get(self):
         r = self._api.get("https://jsonplaceholder.typicode.com/posts/1")
-        self.assertEqual(r.status_code, requests.codes.ok)
-        #r.raise_for_status()
+        org=self._api.atlas_get("/orgs/599eeced9f78f769464d175c")
+        #pprint.pprint(org)
+        self.assertEqual(org["name"], "Open Data at MongoDB")
 
+    def test_get_projects(self):
+        resource="/groups"
+        for i,resource in self._api.get_resource_by_page(resource):
+            print(i)
 
     def test_post(self):
-        # r = self._api.post("https://jsonplaceholder.typicode.com/posts", {'handle1' : '@jdrumgoole'})
-        # self.assertEqual(r.status_code, 201)
-
-        self._api.atlas_post("/orgs", {"name": "Drumgoole Test Organization"})
-
-    # def test_atlas_get(self):
-    #     r = self._api.atlas_get("/orgs/599eeced9f78f769464d175c")
-    #     self.assertEqual(r.status_code, 200)
-    #     #r.raise_for_status()
+        pass

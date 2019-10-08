@@ -34,7 +34,6 @@ class AtlasKey:
     def get_from_env(cls):
         public_key = AtlasKey.getenv(AtlasEnv.ATLAS_PUBLIC_KEY.value)
         private_key = AtlasKey.getenv(AtlasEnv.ATLAS_PRIVATE_KEY.value)
-        print(public_key)
         return AtlasKey(public_key, private_key)
 
     @property

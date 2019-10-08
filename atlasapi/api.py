@@ -18,12 +18,14 @@ import pprint
 from dateutil import parser
 from requests.exceptions import HTTPError
 
-from atlasapi.apimixin import AtlasAPIMixin
-from atlasapi.errors import AtlasRequestError
+from atlasapi.apimixin import APIMixin
+from atlasapi.atlaskey import AtlasKey
 
 
 class AtlasResource(object):
-
+    """
+    Base class for Atlas Resources
+    """
     def __init__(self, resource):
         self._resource = resource
         if "created" in self._resource:  # convert date string to datetime obj
@@ -46,7 +48,7 @@ class AtlasResource(object):
         return f'{pprint.pformat(self._resource)}'
 
     def summary_string(self):
-        return f"id:{self.id()}, name:{self.name()}"
+        return f"id:'{self.id}' name:'{self.name}'"
 
     def print_summary(self):
         return self.summary_string()
@@ -73,20 +75,19 @@ class AtlasCluster(AtlasResource):
         super().__init__(cluster)
 
 
-class AtlasAPI(AtlasAPIMixin):
+class AtlasAPI(APIMixin):
 
-    def __init__(self, username=None, api_key=None):
-        super().__init__(username=username, api_key=api_key)
+    def __init__(self, api_key : AtlasKey=None):
+        super().__init__(api_key)
 
-    def get_organization(self, organization_id):
-        try:
-            return AtlasOrganization(self.get_dict(f"/orgs/{organization_id}"))
-        except HTTPError as e:
-            raise AtlasRequestError(e)
+    def get_organization(self):
+        for i in self.get_resource_by_item("/orgs"):
+            yield  AtlasOrganization(i)
+
 
     @lru_cache(maxsize=500)
     def get_cached_organization(self, organization_id):
-        return AtlasOrganization(self.get_dict(f"/orgs/{organization_id}"))
+        return AtlasOrganization(self.get(f"/orgs/{organization_id}"))
 
     def get_organization_links(self):
         """
@@ -98,6 +99,7 @@ class AtlasAPI(AtlasAPIMixin):
         yield from self.get_resource_by_item("/orgs")
 
     def get_organization_links_by_page(self):
+        self._log.debug("get_organization_links_by_page()")
         """
         We provide `get_organization_links_by_page` to allow the client
         to catch exceptions and retry. With the generator API an exception
@@ -120,38 +122,32 @@ class AtlasAPI(AtlasAPIMixin):
                     break
 
     def __repr__(self):
-        return f"{self.__class__.__name__}('{self._username}', '{self._api_key}')"
+        return f"{self.__class__.__name__}({repr(self.api_key)})"
 
     def get_project(self, project_id):
-        try:
-            return AtlasProject(self.get_dict(f"/groups/{project_id}"))
-        except HTTPError as e:
-            raise AtlasRequestError(e)
+            return AtlasProject(self.get(f"/groups/{project_id}"))
 
     @lru_cache(maxsize=500)
     def get_cached_project(self, project_id):
-        return AtlasProject(self.get_dict(f"/groups/{project_id}"))
+        return AtlasProject(self.get(f"/groups/{project_id}"))
 
-    def get_project_links(self):
-        yield from self.get_resource_by_item("/groups")
+    def get_projects(self):
+        for i in self.get_resource_by_item("/groups"):
+            yield AtlasProject(i)
 
     def get_project_ids(self):
         yield from self.get_ids("groups")
 
-    def get_projects(self, organization_id):
-        for i in self.get_resource_by_item(f"/orgs/{organization_id}/groups"):
-            yield self.get_project(i["id"])
-
     def get_cluster(self, project_id, cluster_name):
-        return AtlasCluster(self.get_dict(f"/groups/{project_id}/clusters/{cluster_name}"))
+        return AtlasCluster(self.get(f"/groups/{project_id}/clusters/{cluster_name}"))
 
     @lru_cache(maxsize=500)
     def get_cached_cluster(self, project_id, cluster_name):
-        return self.get_dict(f"/groups/{project_id}/clusters/{cluster_name}")
+        return self.get(f"/groups/{project_id}/clusters/{cluster_name}")
 
     def get_clusters(self, project_id):
         for i in self.get_resource_by_item(f"/groups/{project_id}/clusters"):
-            yield self.get_cluster(project_id, i["name"])
+            yield AtlasCluster(i)
 
     def pause_cluster(self, org_id, cluster):
 

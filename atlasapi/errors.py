@@ -1,9 +1,21 @@
 
-class AtlasAuthenticationError(ValueError):
+class AtlasError(ValueError):
     pass
 
 
-class AtlasRequestError(ValueError):
+class AtlasAuthenticationError(AtlasError):
+    pass
+
+
+class AtlasGetError(AtlasError):
+    pass
+
+
+class AtlasPostError(AtlasError):
+    pass
+
+
+class AtlasPatchError(AtlasError):
     pass
 
 

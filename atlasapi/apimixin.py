@@ -14,7 +14,9 @@ from requests.auth import HTTPDigestAuth
 import requests
 
 from .atlaskey import AtlasKey
-from .errors import AtlasRequestError, \
+from .errors import AtlasGetError, \
+                    AtlasPatchError, \
+                    AtlasPostError, \
                     AtlasAuthenticationError,\
                     AtlasEnvironmentError,\
                     AtlasInitialisationError
@@ -36,14 +38,14 @@ class APIMixin(object):
                      "Content-Type": "application/json"}
 
     def __init__(self,
-                 api_key:AtlasKey,
+                 api_key:AtlasKey=None,
                  page_size=100,
                  debug=0):
 
         self._api_key: AtlasKey = api_key
         self._auth = None
         self._debug = None
-        self._log = None
+        self._log = logging.getLogger(__name__)
         self._page_size = page_size
 
         if self._page_size < 1 or self._page_size > 500 :
@@ -71,101 +73,91 @@ class APIMixin(object):
         # print(self._api_key)
         self._auth = HTTPDigestAuth(self._api_key.public_key, self._api_key.private_key)
 
-    def post(self, resource, data):
+    @property
+    def api_key(self):
+        return self._api_key
 
-        if self._debug:
-            self._log.debug(f"post({resource}, {data})")
+    def post(self, resource, data):
+        self._log.debug(f"post({resource}, {data})")
 
         try:
             #print(f"atlas_post:{resource}, {data}")
             r = requests.post(resource, data=data, headers=self.ATLAS_HEADERS, auth=self._auth)
-            print(r.url)
+            #print(r.url)
             r.raise_for_status()
             if self._log:
                 self._log.debug(f"returns:")
                 self._log.debug(f"\n{pprint.pprint(r.json())}")
 
         except requests.exceptions.HTTPError as e:
-            raise AtlasRequestError(e)
-        return r
+            raise AtlasPostError(e)
+        return r.json()
 
-    def get(self, resource, headers=None, auth=None):
-        if self._debug:
-            self._log.debug(f"get({resource})")
+    def get(self, resource, headers=None, page_num=1, items_per_page=100):
+        self._log.debug(f"get({resource})")
         # Need to use the raw URL when getting linked data
 
         assert self._api_key is not None
         assert self._api_key != ""
-        assert self._username is not None
-        assert self._username != ""
 
-        r = requests.get(resource,
-                         headers=headers,
-                         auth=auth)
-        r.raise_for_status()
-        return r
+        if "itemsPerPage" not in resource:
+            resource=resource+f"?itemsPerPage={items_per_page}"
+
+        if "pageNum" not in resource:
+            resource=resource+f"&pageNum={page_num}"
+        try:
+            r = requests.get(resource,
+                             headers=headers,
+                             auth=self._auth)
+            r.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise AtlasGetError(e)
+        return r.json()
 
     def atlas_post(self, resource, data):
         return self.post(f"{self.ATLAS_BASE_URL}{resource}", data)
 
-    def atlas_get(self,resource):
+    def atlas_get(self,resource=None, page_num=1, items_per_page=100):
+        if resource is None:
+            resource = ""
+        return self.get(f"{self.ATLAS_BASE_URL}{resource}", items_per_page=items_per_page, page_num=page_num)
 
-        if self._debug:
-            self._log.debug(f"get({resource})")
-        # Need to use the raw URL when getting linked data
-        if resource.startswith("http"):
-            url = resource
-        else:
-            url = self.ATLAS_BASE_URL + resource
-
-        assert self._api_key is not None
-        assert self._api_key != ""
-        assert self._username is not None
-        assert self._username != ""
-
-        try:
-
-            r = requests.get(url=url,
-                             headers=self.ATLAS_HEADERS,
-                             auth=self._auth)
-            r.raise_for_status()
-            if self._log:
-                self._log.debug(f"returns:")
-                self._log.debug(f"\n{pprint.pprint(r.json())}")
-
-        except requests.exceptions.HTTPError as e:
-            raise AtlasRequestError(e)
-        return r
+    def atlas_patch(self, resource, data):
+        return self.patch(f"{self.ATLAS_BASE_URL}{resource}", data)
 
     def patch(self, resource_url, patch_doc):
-        p = requests.patch(self.ATLAS_BASE_URL + resource_url,
-                           json=patch_doc,
-                           headers=self.ATLAS_HEADERS,
-                           auth=self._auth
-                           )
-        p.raise_for_status()
-        return p
+        try:
+            p = requests.patch(resource_url,
+                               json=patch_doc,
+                               headers=self.ATLAS_HEADERS,
+                               auth=self._auth
+                               )
+            p.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise AtlasPostError(e)
+        return p.json()
+
+        return p.json()
 
     def get_text(self, resource_url):
         return self.get(resource_url).text
 
-    def get_dict(self, resource_url):
-        return self.get(resource_url).json()
-
     def get_resource_by_page(self, resource):
-
+        """
+        return each array of resources as a single
+        :param resource:
+        :return:
+        """
+        self._log.debug(f"get_resource_by_page({resource})")
         results = None
         next_link = None
 
-        if self._log:
-            self._log.debug(f"get_list_data_by_page({resource})")
-
-        doc = self.get_dict(resource)
+        doc = self.atlas_get(resource)
 
         if 'results' in doc:
             results = doc["results"]
         else:
-            raise AtlasRequestError(f"No 'results' field in '{doc}'")
+            raise AtlasGetError(f"No 'results' field in '{doc}'")
 
         links = doc['links']
         last_link = links[-1]
@@ -183,14 +175,13 @@ class APIMixin(object):
             for i in doc["results"]:
                 yield i
         else:
-            raise AtlasRequestError(f"No 'results' field in '{doc}'")
+            raise AtlasGetError(f"No 'results' field in '{doc}'")
 
-    def get_resource_by_item(self, resource, limit=None):
+    def get_resource_by_item(self, resource):
 
-        if self._log:
-            self._log.debug(f"get_linked_data({resource})")
+        self._log.debug(f"get_linked_data({resource})")
 
-        doc = self.get_dict(resource)
+        doc = self.atlas_get(resource)
         yield from self._get_results(doc)
         links = doc['links']
         last_link = links[-1]
@@ -209,7 +200,7 @@ class APIMixin(object):
         #     yield from self.get_resource_by_item(last_link["href"])
 
     def get_ids(self, field):
-        for i in self.get_linked_data(f"/{field}"):
+        for i in self.get_resource_by_item(f"/{field}"):
             yield i["id"]
 
     def get_names(self, field):
