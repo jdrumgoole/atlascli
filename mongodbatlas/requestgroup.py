@@ -9,7 +9,7 @@ try:
                      headers={"Accept": "application/json",
                               "Content-Type": "application/json"},
                      auth=HTTPDigestAuth(key.public_key, key.private_key))
-    print(r.json()["detail"])
+    print(r.json())
     r.raise_for_status()
 except requests.exceptions.HTTPError as e:
     print(e)

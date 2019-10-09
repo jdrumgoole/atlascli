@@ -63,30 +63,27 @@ class ClusterState(Enum):
     def __str__(self):
         return self.value
 
-if __name__ == "__main__":
+def main():
 
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--publickey", help="MongoDB Atlas public API key")
     parser.add_argument("--privatekey", help="MongoDB Atlas private API key")
 
-    parser.add_argument("--print_urls", default=False, action="store_true",
-                        help="Print URLS constructed by API")
     parser.add_argument("--org", action="store_true", default=False,
                         help="Get the organisation associated with the "
                              "current API key pair [default: %(default)s]")
     parser.add_argument("--pause", default=[], dest="pause_cluster",
                         action="append", 
-                        help="pause named cluster in project specified by project_id:cluster_name")
-    parser.add_argument("--resume", default=[], 
+                        help="pause named cluster in project specified by project_id "
+                             "Note that clusters that have been resumed cannot be paused"
+                             "for the next 60 minutes")
+    parser.add_argument("--resume", default=[],
                         dest="resume_cluster", action="append",
-                        help="resume named cluster in project specified by project_id:cluster_name")
+                        help="resume named cluster in project specified by project_id")
     parser.add_argument("--list", type=ResourceType, default=None, choices=list(ResourceType),
                         action="append",
                         help="List all of the reachable categories [default: %(default)s]")
-
-    parser.add_argument("--ids", default=False, action="store_true", 
-                        help="Report IDs as opposed to names")
 
     parser.add_argument('--cluster', default=[],
                         action="append", 
@@ -98,20 +95,23 @@ if __name__ == "__main__":
                         default=OutputFormat.SUMMARY, choices=list(OutputFormat),
                         help="The format to output data either in a single line "
                              "summary or a full JSON document [default: %(default)s]")
-    parser.add_argument("--logging", default=False, action="store_true",
+    parser.add_argument("--debug", default=False, action="store_true",
                         help="Turn on logging at debug level")
     parser.add_argument("--resource",
                         help="Get resource by URL can use a base URL like 'group'"
-                             "or a full URL path")
+                             "or a full URL path use 'root' for the top level resource")
     parser.add_argument("--itemsperpage", type=int, default=100,
                         help="No of items to return per page [default: %(default)s]")
     parser.add_argument("--pagenum", type=int, default=1,
                         help="Page to return [default: %(default)s]")
     args = parser.parse_args()
 
-    if args.logging:
+    if args.debug:
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                             level=logging.DEBUG)
+    else:
+        logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                            level=logging.INFO)
 
     logging.debug("logging is on at DEBUG level")
 
@@ -135,66 +135,62 @@ if __name__ == "__main__":
 
     api = AtlasAPI(AtlasKey(public_key, private_key))
 
-    if args.resource:
-        if args.resource == "root":
-            r = api.atlas_get()
-        elif args.resource.startswith("http"):
-            r = api.get(args.resource, page_num=args.pagenum, items_per_page=args.itemsperpage)
-        else:
-            if not args.resource.startswith("/"):
-                args.resource = f"/{args.resource}"
-            r=api.atlas_get(args.resource, page_num=args.pagenum, items_per_page=args.itemsperpage)
-
-        pprint.pprint(r)
-        sys.exit(0)
     try:
-        if args.org:
-            print("Organisations:")
-            for i in api.get_organization():
-                i.print_resource(args.format)
+        if args.resource:
+            if args.resource == "root":
+                r = api.atlas_get()
+            elif args.resource.startswith("http"):
+                r = api.get(args.resource, page_num=args.pagenum, items_per_page=args.itemsperpage)
+            else:
+                if not args.resource.startswith("/"):
+                    args.resource = f"/{args.resource}"
+                r=api.atlas_get(args.resource, page_num=args.pagenum, items_per_page=args.itemsperpage)
 
-        if ResourceType.Project in args.list:
-            print("Projects:")
-            for project in api.get_projects():
-                project.print_resource(args.format)
-            #print_links(project_links, api.get_project, project_details)
+            pprint.pprint(r)
+        else:
+            if args.org:
+                print("Organisations:")
+                for i in api.get_organization():
+                    i.print_resource(args.format)
 
-        if ResourceType.Cluster in args.list:
-            print("Clusters:")
-            for project in api.get_projects():
-                for cluster in api.get_clusters(project.id):
-                    cluster.print_resource(args.format)
+            if args.list and ResourceType.Project in args.list:
+                print("Projects:")
+                for project in api.get_projects():
+                    project.print_resource(args.format)
+                #print_links(project_links, api.get_project, project_details)
 
-        if args.pause_cluster:
-            for i in args.pause_cluster:
+            if args.list and ResourceType.Cluster in args.list:
+                print("Clusters:")
                 for project in api.get_projects():
                     for cluster in api.get_clusters(project.id):
-                        if cluster.id == i :
-                            result = cluster.pause(project.id)
-                            if result is None:
-                                print(f"Cluster {cluster.id} {cluster.name} was already paused")
-                            else:
-                                print(f"Pausing {cluster.id} {cluster.name}")
+                        cluster.print_resource(args.format)
 
-        if args.resume_cluster:
-            for i in args.resume_cluster:
-                for project in api.get_projects():
-                    for cluster in api.get_clusters(project.id):
-                        if cluster.id == i:
-                            result = cluster.resume(project.id)
-                            if result is None:
-                                print(f"Cluster {cluster.id} {cluster.name} was already running")
-                            else:
-                                print(f"Resuming  {cluster.id} {cluster.name}")
-        #
-        # for i in args.cluster:
-        #     project_id,sep,cluster_name = i.partition(":")
-        #     if len(project_id) == len(i):
-        #         print(f"Can't parse '{i}' as <project>:<cluster>")
-        #         continue
-        #     cluster = api.get_cluster(project_id, cluster_name)
-        #     pprint.pprint(cluster)
+            if args.pause_cluster:
+                for i in args.pause_cluster:
+                    for project in api.get_projects():
+                        for cluster in api.get_clusters(project.id):
+                            if cluster.id == i :
+                                result = cluster.pause(project.id)
+                                if result is None:
+                                    print(f"Cluster {cluster.id} {cluster.name} was already paused")
+                                else:
+                                    print(f"Pausing {cluster.id} {cluster.name}")
+
+            if args.resume_cluster:
+                for i in args.resume_cluster:
+                    for project in api.get_projects():
+                        for cluster in api.get_clusters(project.id):
+                            if cluster.id == i:
+                                result = cluster.resume(project.id)
+                                if result is None:
+                                    print(f"Cluster {cluster.id} {cluster.name} was already running")
+                                else:
+                                    print(f"Resuming  {cluster.id} {cluster.name}")
+
     except KeyboardInterrupt:
         print("Ctrl-C: Exiting...")
     except AtlasError as e:
         print(f"AtlasError:{e}")
+
+if __name__ == "__main__":
+    main()

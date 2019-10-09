@@ -24,8 +24,8 @@ class Test_APIMixin(unittest.TestCase):
 
     def test_get_projects(self):
         resource="/groups"
-        for i,resource in self._api.get_resource_by_page(resource):
-            print(i)
+        for project in self._api.get_resource_by_item(resource):
+            self.assertTrue(type(project) == dict)
 
     def test_post(self):
         pass
