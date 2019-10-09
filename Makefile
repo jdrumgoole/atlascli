@@ -11,13 +11,16 @@ test:
 	nosetests
 
 prod_build:clean  sdist
-	pipenv run twine upload --verbose --repository-url https://upload.pypi.org/legacy/ dist/* -u jdrumgoole
+	twine upload --verbose dist/* -u jdrumgoole
 
 test_build:test sdist
-	pipenv run twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/* -u jdrumgoole
+	twine upload --verbose dist/* -u jdrumgoole
 
 sdist:
-	pipenv run setup.py sdist
+	python setup.py sdist
+
+clean:
+	rm -rf dist bdist sdist mongodbatlas.egg-info
 
 keyring:
 	keyring set https://test.pypi.org/legacy/ jdrumgoole

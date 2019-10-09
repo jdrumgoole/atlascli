@@ -5,7 +5,33 @@ a complete and well documented [REST API](https://docs.atlas.mongodb.com/api/).
 
 ## Installation
 
-The easiest way to install the A
+The easiest way to install the `mongodbatlas` is with `pip`.
+
+```shell
+$ pip install mongodbatlas
+```
+
+Once the installation completes you can confirm it has worked by running
+
+```shell
+$ atlascli -h
+usage: atlascli [-h] [--publickey PUBLICKEY] [--privatekey PRIVATEKEY] [--org]
+                [--pause PAUSE_CLUSTER] [--resume RESUME_CLUSTER]
+                [--list {projects,clusters}] [--cluster CLUSTER]
+                [--project_id PROJECT_DETAIL] [--format {summary,full}]
+                [--debug] [--resource RESOURCE] [--itemsperpage ITEMSPERPAGE]
+                [--pagenum PAGENUM]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --publickey PUBLICKEY
+                        MongoDB Atlas public API key
+  --privatekey PRIVATEKEY
+                        MongoDB Atlas private API key
+...
+```
+
+
 The Python Atlas API wraps the REST API in a more Pythonic
 API based around an ``AtlasAPI`` class. 
 
