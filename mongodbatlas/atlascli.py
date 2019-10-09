@@ -56,22 +56,12 @@ def parse_id(s, sep=":"):
         raise ParseError(f"Bad separator '{separator}' in {s}")
     return id1, id2
 
+class ClusterState(Enum):
+    PAUSE="pause"
+    RESUME="resume"
 
-def cluster_list_apply(api, clusters, op_func):
-    for i in clusters:
-        try:
-            project_id, cluster_name = parse_id(i)
-        except ParseError:
-            print(f"Error: Can't parse '{i}'")
-            continue
-        try:
-            cluster = api.get_one_cluster(project_id, cluster_name)
-            op_func(project_id, cluster)
-        except requests.exceptions.HTTPError as e:
-            print("Error:Atlas API request failed")
-            print(e)
-            continue
-
+    def __str__(self):
+        return self.value
 
 if __name__ == "__main__":
 
@@ -176,10 +166,26 @@ if __name__ == "__main__":
                     cluster.print_resource(args.format)
 
         if args.pause_cluster:
-            cluster_list_apply(api, args.pause_cluster, api.pause_cluster)
+            for i in args.pause_cluster:
+                for project in api.get_projects():
+                    for cluster in api.get_clusters(project.id):
+                        if cluster.id == i :
+                            result = cluster.pause(project.id)
+                            if result is None:
+                                print(f"Cluster {cluster.id} {cluster.name} was already paused")
+                            else:
+                                print(f"Pausing {cluster.id} {cluster.name}")
 
         if args.resume_cluster:
-            cluster_list_apply(api, args.resume_cluster, api.resume_cluster)
+            for i in args.resume_cluster:
+                for project in api.get_projects():
+                    for cluster in api.get_clusters(project.id):
+                        if cluster.id == i:
+                            result = cluster.resume(project.id)
+                            if result is None:
+                                print(f"Cluster {cluster.id} {cluster.name} was already running")
+                            else:
+                                print(f"Resuming  {cluster.id} {cluster.name}")
         #
         # for i in args.cluster:
         #     project_id,sep,cluster_name = i.partition(":")

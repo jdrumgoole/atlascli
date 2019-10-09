@@ -129,24 +129,26 @@ class APIMixin(object):
         return self.get(f"{self.ATLAS_BASE_URL}{resource}", items_per_page=items_per_page, page_num=page_num)
 
     def atlas_patch(self, resource, data):
+        self._log.debug(f"atlas_patch({resource}, {data})")
         return self.patch(f"{self.ATLAS_BASE_URL}{resource}", data)
 
-    def patch(self, resource_url, patch_doc):
+    def patch(self, resource, patch_doc):
         try:
-            p = requests.patch(resource_url,
+            p = requests.patch(f"{resource}",
                                json=patch_doc,
                                headers=self.ATLAS_HEADERS,
                                auth=self._auth
                                )
             p.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            raise AtlasPostError(e)
+            print(patch_doc)
+            raise AtlasPatchError(e)
         return p.json()
 
         return p.json()
 
-    def get_text(self, resource_url):
-        return self.get(resource_url).text
+    def get_text(self, resource):
+        return self.get(resource).text
 
     def get_resource_by_page(self, resource):
         """

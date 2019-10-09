@@ -31,11 +31,13 @@ class OutputFormat(Enum):
     def __str__(self):
         return self.value
 
-class AtlasResource(object):
+
+class AtlasResource(APIMixin):
     """
     Base class for Atlas Resources
     """
-    def __init__(self, resource):
+    def __init__(self, resource, api_key:AtlasKey=None):
+        super().__init__(api_key)
         self._resource = resource
         if "created" in self._resource:  # convert date string to datetime obj
             self._resource["created"] = parser.parse(self._resource["created"])
@@ -68,6 +70,7 @@ class AtlasResource(object):
     def __repr__(self):
         return f"{self.__class__.__name__}({self._resource!r})"
 
+
 class AtlasOrganization(AtlasResource):
 
     def __init__(self, org):
@@ -85,6 +88,36 @@ class AtlasCluster(AtlasResource):
     def __init__(self, cluster):
         super().__init__(cluster)
 
+    def summary_string(self):
+        quoted_name = f"'{self.name}'"
+        if self._resource['paused']:
+            state = "paused"
+        else:
+            state = "running"
+        return f"id:'{self.id}' name:{quoted_name:24} {state}"
+
+    @property
+    def paused(self):
+        return self._resource["paused"]
+
+    @property
+    def running(self):
+        return not self._resource["paused"]
+
+    def pause(self, project_id):
+        if self.running:
+            pause_doc = {"paused": True}
+            return self.atlas_patch(f"/groups/{project_id}/clusters/{self.name}", pause_doc)
+        else:
+            return None
+
+    def resume(self, project_id):
+
+        if self.paused:
+            return None
+        else:
+            pause_doc = {"paused": False}
+            return self.atlas_patch(f"/groups/{project_id}/clusters/{self.name}", pause_doc)
 
 class AtlasAPI(APIMixin):
 
@@ -160,22 +193,4 @@ class AtlasAPI(APIMixin):
         for i in self.get_resource_by_item(f"/groups/{project_id}/clusters"):
             yield AtlasCluster(i)
 
-    def pause_cluster(self, org_id, cluster):
 
-        name = cluster['name']
-        if cluster["paused"]:
-            print(f"Cluster: '{name}' is already paused. Nothing to do")
-        else:
-            print(f"Pausing cluster: '{name}'")
-            pause_doc = {"paused": True}
-            self.patch(f"/groups/{org_id}/clusters/{name}", pause_doc)
-
-    def resume_cluster(self, org_id, cluster):
-
-        name = cluster['name']
-        if not cluster["paused"]:
-            print(f"Cluster: '{name}' is already running. Nothing to do")
-        else:
-            print(f"Resuming cluster: '{name}'")
-            pause_doc = {"paused": False}
-            self.patch(f"/groups/{org_id}/clusters/{name}", pause_doc)
