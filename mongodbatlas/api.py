@@ -105,19 +105,21 @@ class AtlasCluster(AtlasResource):
         return not self._resource["paused"]
 
     def pause(self, project_id):
-        if self.running:
+        if self.paused:
+            return None
+
+        else:
             pause_doc = {"paused": True}
             return self.atlas_patch(f"/groups/{project_id}/clusters/{self.name}", pause_doc)
-        else:
-            return None
 
     def resume(self, project_id):
 
         if self.paused:
-            return None
-        else:
             pause_doc = {"paused": False}
             return self.atlas_patch(f"/groups/{project_id}/clusters/{self.name}", pause_doc)
+        else:
+            return None
+
 
 class AtlasAPI(APIMixin):
 

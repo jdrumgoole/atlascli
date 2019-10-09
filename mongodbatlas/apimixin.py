@@ -117,7 +117,7 @@ class APIMixin(object):
                              auth=self._auth)
             r.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            raise AtlasGetError(e)
+            raise AtlasGetError(e, r.json()["detail"])
         return r.json()
 
     def atlas_post(self, resource, data):
@@ -142,7 +142,7 @@ class APIMixin(object):
             p.raise_for_status()
         except requests.exceptions.HTTPError as e:
             print(patch_doc)
-            raise AtlasPatchError(e)
+            raise AtlasPatchError(e, p.json()["detail"])
         return p.json()
 
         return p.json()

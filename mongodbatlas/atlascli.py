@@ -20,7 +20,7 @@ from mongodbatlas.api import AtlasOrganization
 
 from mongodbatlas.api import AtlasAPI,OutputFormat
 from mongodbatlas.atlaskey import AtlasKey
-from mongodbatlas.errors import AtlasGetError
+from mongodbatlas.errors import AtlasGetError, AtlasError
 
 
 class ParseError(ValueError):
@@ -196,3 +196,5 @@ if __name__ == "__main__":
         #     pprint.pprint(cluster)
     except KeyboardInterrupt:
         print("Ctrl-C: Exiting...")
+    except AtlasError as e:
+        print(f"AtlasError:{e}")

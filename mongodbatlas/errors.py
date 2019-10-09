@@ -1,7 +1,16 @@
 
-class AtlasError(ValueError):
-    pass
+from requests.exceptions import HTTPError
 
+
+class AtlasError(HTTPError):
+    def __init__(self, *args, **kwargs):
+        self._text = kwargs.pop("text", None)
+
+        super().__init__(*args, **kwargs)
+
+    @property
+    def text(self):
+        return self._text
 
 class AtlasAuthenticationError(AtlasError):
     pass
