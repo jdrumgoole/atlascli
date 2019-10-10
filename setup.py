@@ -9,9 +9,10 @@ import os
 import sys
 from shutil import rmtree
 
-from setuptools import find_packages, setup, Command
+from setuptools import find_packages, setup
 
 from mongodbatlas.__version__ import __VERSION__
+
 # Package meta-data.
 NAME = 'mongodbatlas'
 DESCRIPTION = 'Python API to the MongoDB Atlas REST Interface'
@@ -21,10 +22,6 @@ AUTHOR = 'Joe Drumgoole'
 REQUIRES_PYTHON = '>=3.6.0'
 VERSION = __VERSION__
 
-# What packages are required for this module to be executed?
-REQUIRED = [
-   'requests',
-]
 
 # What packages are optional?
 EXTRAS = {
@@ -66,17 +63,10 @@ setup(
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
-    #packages=find_packages(exclude=('tests',)),
-    # If your package is a single module, use this instead of 'packages':
     packages=find_packages(),
-    # entry_points={
-    #     'console_scripts': ['mycli=mymodule:cli'],
-    # },
-    install_requires=REQUIRED,
+    install_requires=["requests"],
     tests_require=["nose"],
-    extras_require=EXTRAS,
-    include_package_data=True,
-    license='MIT',
+    license='Apache 2.0',
     classifiers=[
         # Trove classifiers
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers

@@ -125,7 +125,7 @@ class AtlasProject(AtlasResource):
     def get_project_ids(self):
         for project in self.get_resource_by_item(f"/groups"):
             yield project["id"]
-            
+
 class AtlasCluster(AtlasResource):
 
     def __init__(self, cluster=None):
