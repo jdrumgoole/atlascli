@@ -55,17 +55,40 @@ class AtlasResource(APIMixin):
     def name(self):
         return self._resource["name"]
 
-    def __str__(self):
-        return f'{pprint.pformat(self._resource)}'
-
     def summary_string(self):
         return f"id:'{self.id}' name:'{self.name}'"
 
-    def print_resource(self, format=OutputFormat.SUMMARY):
-        if format is OutputFormat.SUMMARY:
+    def print_resource(self, fmt=OutputFormat.SUMMARY):
+        if fmt is OutputFormat.SUMMARY:
             print(self.summary_string())
         else:
             pprint.pprint(self._resource)
+
+    def get_resource_by_item(self, resource):
+
+        self._log.debug(f"get_linked_data({resource})")
+
+        doc = self.atlas_get(resource)
+        yield from self._get_results(doc)
+        links = doc['links']
+        last_link = links[-1]
+
+        while "rel" in last_link and "next" == last_link["rel"]:
+            doc = self.get(last_link["href"])
+            yield from self._get_results(doc)
+            links = doc['links']
+            last_link = links[-1]
+
+    def get_ids(self, field):
+        for i in self.get_resource_by_item(f"/{field}"):
+            yield i["id"]
+
+    def get_names(self, field):
+        for i in self.get_resource_by_item(f"/{field}"):
+            yield i["name"]
+
+    def __str__(self):
+        return f'{pprint.pformat(self._resource)}'
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self._resource!r})"
@@ -76,17 +99,35 @@ class AtlasOrganization(AtlasResource):
     def __init__(self, org):
         super().__init__(org)
 
+    def get_organizations(self):
+        for org in self.get_resource_by_item("/orgs"):
+            yield AtlasOrganization(org)
+
+    def get_one_organization(self, org_id):
+        return AtlasOrganization(self.atlas_get(f"/orgs/{org_id}"))
+
 
 class AtlasProject(AtlasResource):
 
     def __init__(self, project):
         super().__init__(project)
 
+    def get_projects(self, org_id):
+        for project in self.get_resource_by_item(f"/orgs/{org_id}/groups"):
+            yield AtlasProject(project)
+
+    def get_one_project(self, project_id):
+        return AtlasProject(self.atlas_get(f"/groups/{project_id}"))
+
 
 class AtlasCluster(AtlasResource):
 
     def __init__(self, cluster):
         super().__init__(cluster)
+
+    @staticmethod
+    def cluster_url(project_id, cluster_name):
+        return f"/groups/{project_id}/clusters/{cluster_name}"
 
     def summary_string(self):
         quoted_name = f"'{self.name}'"
@@ -95,6 +136,13 @@ class AtlasCluster(AtlasResource):
         else:
             state = "running"
         return f"id:'{self.id}' name:{quoted_name:24} {state}"
+
+    def get_clusters(self, project_id):
+        for cluster in self.get_resource_by_item(f"/groups/{project_id}/clusters"):
+            yield AtlasCluster(cluster)
+
+    def get_one_cluster(self, project_id, cluster_name):
+        return AtlasCluster(self.atlas_get(self.cluster_url(project_id, cluster_name)))
 
     @property
     def paused(self):
@@ -123,13 +171,8 @@ class AtlasCluster(AtlasResource):
 
 class AtlasAPI(APIMixin):
 
-    def __init__(self, api_key : AtlasKey=None):
+    def __init__(self, api_key: AtlasKey = None):
         super().__init__(api_key)
-
-    def get_organizations(self):
-        for i in self.get_resource_by_item("/orgs"):
-            yield AtlasOrganization(i)
-
 
     @lru_cache(maxsize=500)
     def get_cached_organization(self, organization_id):
@@ -156,15 +199,6 @@ class AtlasAPI(APIMixin):
         results the URL value will be None.
         """
         return self.get_resource_by_page("/orgs")
-
-    def get_organisation_ids(self):
-        yield from self.get_ids("orgs")
-
-    def get_organization(self):
-        for org in self.get_organisations():
-            return org
-        else:
-            return None
 
     def __repr__(self):
         return f"{self.__class__.__name__}({repr(self.api_key)})"

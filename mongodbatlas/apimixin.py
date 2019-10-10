@@ -185,36 +185,6 @@ class APIMixin(object):
         else:
             raise AtlasGetError(f"No 'results' field in '{doc}'")
 
-    def get_resource_by_item(self, resource):
-
-        self._log.debug(f"get_linked_data({resource})")
-
-        doc = self.atlas_get(resource)
-        yield from self._get_results(doc)
-        links = doc['links']
-        last_link = links[-1]
-
-        while "rel" in last_link and "next" == last_link["rel"]:
-            doc = self.get_dict(last_link["href"])
-            yield from self._get_results(doc)
-            links = doc['links']
-            last_link = links[-1]
-
-        # links = doc['links']
-        # last_link = links[-1]
-        # # print(links)
-        # # print(last_link)
-        # if "rel" in last_link and "next" == last_link["rel"]:
-        #     yield from self.get_resource_by_item(last_link["href"])
-
-    def get_ids(self, field):
-        for i in self.get_resource_by_item(f"/{field}"):
-            yield i["id"]
-
-    def get_names(self, field):
-        for i in self.get_linked_data(f"/{field}"):
-            yield i["name"]
-
 
 class APIFormatter(object):
 
@@ -242,18 +212,6 @@ class APIFormatter(object):
                 summary += "{:4}".format("R")
 
         print(summary)
-
-    # @staticmethod
-    # def print_item(count, title, item, indent=0):
-    #     print(" {}{}. {:5}: {:25} id={:>24}".format(" " * indent, count, title, quote(item["name"]), item["id"]))
-    #
-    # def print_clusterx_summary(count, title, item, indent=0):
-    #     print(" {}{}. {:5}: {:25} id={:24} paused={}".format(" " * indent,
-    #                                                          count,
-    #                                                          title,
-    #                                                          Atlas_API_Formatter.quote(item["name"]),
-    #                                                          item["id"],
-    #                                                          item["paused"]))
 
     def print_org_summary(self, org, ids=None):
         # print_atlas(f"Org:{org['id']}")
