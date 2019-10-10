@@ -42,6 +42,16 @@ The library assumes the existence of two environment variables:
 * `ATLAS_PRIVATE_KEY` : The private key defined by the Atlas programmatic API
 key.
 
+See the section [below](#how-to-create-an-atlas-api-key) on how to create a programmatic Atlas API key.
+
+## Usage
+
+```python
+from mongodbatlas.api import AtlasAPI
+
+ao
+
+```
 ## How to create an Atlas API Key
 You can create keys at the Organization level by selecting the access menu item 
 on the left hand side menu:

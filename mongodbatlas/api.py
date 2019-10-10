@@ -126,9 +126,9 @@ class AtlasAPI(APIMixin):
     def __init__(self, api_key : AtlasKey=None):
         super().__init__(api_key)
 
-    def get_organization(self):
+    def get_organizations(self):
         for i in self.get_resource_by_item("/orgs"):
-            yield  AtlasOrganization(i)
+            yield AtlasOrganization(i)
 
 
     @lru_cache(maxsize=500)
@@ -160,12 +160,11 @@ class AtlasAPI(APIMixin):
     def get_organisation_ids(self):
         yield from self.get_ids("orgs")
 
-    def get_organisations(self, limit=None):
-        if limit:
-            for i, org in enumerate(self.get_resource_by_item("/orgs"), 1):
-                yield self.get_organization(org["id"])
-                if i == limit:
-                    break
+    def get_organization(self):
+        for org in self.get_organisations():
+            return org
+        else:
+            return None
 
     def __repr__(self):
         return f"{self.__class__.__name__}({repr(self.api_key)})"

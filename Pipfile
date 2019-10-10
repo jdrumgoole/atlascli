@@ -11,6 +11,7 @@ python-dateutil = "*"
 pytest = "*"
 nose = "*"
 twine = "*"
+ipython = "*"
 
 [requires]
 python_version = "3.7"
