@@ -12,6 +12,8 @@ pytest = "*"
 nose = "*"
 twine = "*"
 ipython = "*"
+dateutils = "*"
+keyring = "*"
 
 [requires]
 python_version = "3.7"

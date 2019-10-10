@@ -10,7 +10,7 @@ import os
 
 from setuptools import find_packages, setup
 
-from mongodbatlas.__version__ import __VERSION__
+from mongodbatlas.version import __VERSION__
 
 # Package meta-data.
 NAME = 'mongodbatlas'
@@ -47,7 +47,7 @@ except FileNotFoundError:
 # Where the magic happens:
 setup(
     name=NAME,
-    version=__VERSION__,
+    version="0.2.3b2",
     description=DESCRIPTION,
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -55,9 +55,9 @@ setup(
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
-    packages=find_packages(),
     install_requires=['requests',
                       'dateutils'],
+    packages=find_packages(),
     tests_require=["nose"],
     license='Apache 2.0',
     classifiers=[
