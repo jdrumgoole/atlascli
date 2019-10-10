@@ -102,47 +102,16 @@ class API(object):
         if "rel" in last_link and "next" == last_link["rel"]:
             yield from self.get_linked_data(last_link["href"])
 
-    @staticmethod
-    def cluster_url(project_id, cluster_name):
-        return f"/groups/{project_id}/clusters/{cluster_name}"
 
-    def get_orgs(self):
-        yield from self.get_linked_data("/orgs")
 
-    def get_one_org(self, org_id):
-        return self.get_dict(f"/orgs/{org_id}")
 
-    def get_projects(self, org_id):
-        yield from self.get_linked_data(f"/orgs/{org_id}/groups")
+
 
     def get_one_project(self, project_id):
         return self.get_dict(f"/groups/{project_id}")
 
-    def get_clusters(self, project_id):
-        yield from self.get_linked_data(f"/groups/{project_id}/clusters")
 
-    def get_one_cluster(self, project_id, cluster_name):
-        return self.get_dict(API.cluster_url(project_id, cluster_name))
 
-    def pause_cluster(self, org_id, cluster):
-
-        name = cluster['name']
-        if cluster["paused"]:
-            print(f"Cluster: '{name}' is already paused. Nothing to do")
-        else:
-            print(f"Pausing cluster: '{name}'")
-            pause_doc = {"paused": True}
-            self.patch(API.cluster_url(org_id, name), pause_doc)
-
-    def resume_cluster(self, org_id, cluster):
-
-        name = cluster['name']
-        if not cluster["paused"]:
-            print(f"Cluster: '{name}' is already running. Nothing to do")
-        else:
-            print(f"Resuming cluster: '{name}'")
-            pause_doc = {"paused": False}
-            self.patch(API.cluster_url(org_id, name), pause_doc)
 
 
 class APIFormatter(object):
