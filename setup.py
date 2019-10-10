@@ -6,8 +6,7 @@
 
 import io
 import os
-import sys
-from shutil import rmtree
+
 
 from setuptools import find_packages, setup
 
@@ -43,19 +42,12 @@ try:
 except FileNotFoundError:
     long_description = DESCRIPTION
 
-# Load the package's __version__.py module as a dictionary.
-about = {}
-if not VERSION:
-    with open(os.path.join(here, NAME, '__version__.py')) as f:
-        exec(f.read(), about)
-else:
-    about['__version__'] = VERSION
 
 
 # Where the magic happens:
 setup(
     name=NAME,
-    version=about['__version__'],
+    version=__VERSION__,
     description=DESCRIPTION,
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -64,7 +56,8 @@ setup(
     python_requires=REQUIRES_PYTHON,
     url=URL,
     packages=find_packages(),
-    install_requires=["requests"],
+    install_requires=['requests',
+                      'dateutils'],
     tests_require=["nose"],
     license='Apache 2.0',
     classifiers=[
