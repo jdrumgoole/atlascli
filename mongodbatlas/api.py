@@ -36,12 +36,15 @@ class AtlasResource(APIMixin):
     """
     Base class for Atlas Resources
     """
-    def __init__(self, resource, api_key:AtlasKey=None):
+    def __init__(self, resource=None, api_key:AtlasKey=None):
         super().__init__(api_key)
-        self._resource = resource
-        if "created" in self._resource:  # convert date string to datetime obj
-            self._resource["created"] = parser.parse(self._resource["created"])
-        self._timestamp = datetime.utcnow()
+        if resource:
+            self._resource = resource
+            if "created" in self._resource:  # convert date string to datetime obj
+                self._resource["created"] = parser.parse(self._resource["created"])
+            self._timestamp = datetime.utcnow()
+        else:
+            self._resource = None
 
     @property
     def timestamp(self):
@@ -96,7 +99,7 @@ class AtlasResource(APIMixin):
 
 class AtlasOrganization(AtlasResource):
 
-    def __init__(self, org):
+    def __init__(self, org=None):
         super().__init__(org)
 
     def get_organizations(self):
@@ -109,20 +112,23 @@ class AtlasOrganization(AtlasResource):
 
 class AtlasProject(AtlasResource):
 
-    def __init__(self, project):
+    def __init__(self, project=None):
         super().__init__(project)
 
-    def get_projects(self, org_id):
-        for project in self.get_resource_by_item(f"/orgs/{org_id}/groups"):
+    def get_projects(self):
+        for project in self.get_resource_by_item(f"/groups"):
             yield AtlasProject(project)
 
     def get_one_project(self, project_id):
         return AtlasProject(self.atlas_get(f"/groups/{project_id}"))
 
-
+    def get_project_ids(self):
+        for project in self.get_resource_by_item(f"/groups"):
+            yield project["id"]
+            
 class AtlasCluster(AtlasResource):
 
-    def __init__(self, cluster):
+    def __init__(self, cluster=None):
         super().__init__(cluster)
 
     @staticmethod

@@ -3,6 +3,7 @@ import pprint
 
 from mongodbatlas.apimixin import APIMixin
 from mongodbatlas.atlaskey import AtlasKey
+from mongodbatlas import AtlasProject
 
 import requests
 
@@ -24,7 +25,7 @@ class Test_APIMixin(unittest.TestCase):
 
     def test_get_projects(self):
         resource="/groups"
-        for project in self._api.get_resource_by_item(resource):
+        for project in AtlasProject().get_resource_by_item(resource):
             self.assertTrue(type(project) == dict)
 
     def test_post(self):

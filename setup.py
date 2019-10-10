@@ -68,7 +68,7 @@ setup(
     url=URL,
     #packages=find_packages(exclude=('tests',)),
     # If your package is a single module, use this instead of 'packages':
-    py_modules=['mongodbatlas'],
+    packages=find_packages(),
     # entry_points={
     #     'console_scripts': ['mycli=mymodule:cli'],
     # },

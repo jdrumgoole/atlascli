@@ -16,7 +16,7 @@ import sys
 import logging
 from enum import Enum
 
-from mongodbatlas.api import AtlasOrganization
+from mongodbatlas.api import AtlasOrganization, AtlasProject, AtlasCluster
 
 from mongodbatlas.api import AtlasAPI,OutputFormat
 from mongodbatlas.atlaskey import AtlasKey
@@ -150,25 +150,25 @@ def main():
         else:
             if args.org:
                 print("Organisations:")
-                for i in api.get_organization():
+                for i in AtlasOrganization().get_organizations():
                     i.print_resource(args.format)
 
             if args.list and ResourceType.Project in args.list:
                 print("Projects:")
-                for project in api.get_projects():
+                for project in AtlasProject().get_projects():
                     project.print_resource(args.format)
                 #print_links(project_links, api.get_project, project_details)
 
             if args.list and ResourceType.Cluster in args.list:
                 print("Clusters:")
-                for project in api.get_projects():
-                    for cluster in api.get_clusters(project.id):
+                for project in AtlasProject().get_projects():
+                    for cluster in AtlasCluster().get_clusters(project.id):
                         cluster.print_resource(args.format)
 
             if args.pause_cluster:
                 for i in args.pause_cluster:
-                    for project in api.get_projects():
-                        for cluster in api.get_clusters(project.id):
+                    for project in AtlasProject().get_projects():
+                        for cluster in AtlasCluster().get_clusters(project.id):
                             if cluster.id == i :
                                 result = cluster.pause(project.id)
                                 if result is None:
@@ -178,8 +178,8 @@ def main():
 
             if args.resume_cluster:
                 for i in args.resume_cluster:
-                    for project in api.get_projects():
-                        for cluster in api.get_clusters(project.id):
+                    for project in AtlasProject().get_projects():
+                        for cluster in AtlasCluster().get_clusters(project.id):
                             if cluster.id == i:
                                 result = cluster.resume(project.id)
                                 if result is None:
