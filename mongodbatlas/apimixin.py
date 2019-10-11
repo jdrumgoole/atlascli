@@ -12,15 +12,23 @@ from logging import StreamHandler
 
 from requests.auth import HTTPDigestAuth
 import requests
-
+from enum import Enum
 from .atlaskey import AtlasKey
 from .errors import AtlasGetError, \
                     AtlasPatchError, \
                     AtlasPostError, \
                     AtlasAuthenticationError,\
                     AtlasEnvironmentError,\
-                    AtlasInitialisationError
+                    AtlasInitialisationError, \
+                    AtlasDeleteError
 
+class OutputFormat(Enum):
+
+    SUMMARY = "summary"
+    FULL = "full"
+
+    def __str__(self):
+        return self.value
 
 class APIMixin(object):
     """
@@ -36,6 +44,7 @@ class APIMixin(object):
 
     ATLAS_HEADERS = {"Accept": "application/json",
                      "Content-Type": "application/json"}
+    log= logging.getLogger(__name__)
 
     def __init__(self,
                  api_key:AtlasKey=None,
@@ -82,15 +91,13 @@ class APIMixin(object):
 
         try:
             #print(f"atlas_post:{resource}, {data}")
-            r = requests.post(resource, data=data, headers=self.ATLAS_HEADERS, auth=self._auth)
+            r = requests.post(url=resource, data=data, headers=self.ATLAS_HEADERS, auth=self._auth)
             #print(r.url)
             r.raise_for_status()
-            if self._log:
-                self._log.debug(f"returns:")
-                self._log.debug(f"\n{pprint.pprint(r.json())}")
 
         except requests.exceptions.HTTPError as e:
-            raise AtlasPostError(e)
+            print(f"data:{data}")
+            raise AtlasPostError(e, r.json()["detail"])
         return r.json()
 
     def get(self, resource, headers=None, page_num=1, items_per_page=100):
@@ -121,7 +128,7 @@ class APIMixin(object):
         return r.json()
 
     def atlas_post(self, resource, data):
-        return self.post(f"{self.ATLAS_BASE_URL}{resource}", data)
+        return self.post(resource=f"{self.ATLAS_BASE_URL}{resource}", data=data)
 
     def atlas_get(self,resource=None, page_num=1, items_per_page=100):
         if resource is None:
@@ -132,6 +139,11 @@ class APIMixin(object):
         self._log.debug(f"atlas_patch({resource}, {data})")
         return self.patch(f"{self.ATLAS_BASE_URL}{resource}", data)
 
+    def atlas_delete(self, resource):
+        self._log.debug(f"atlas_delete({resource})")
+        return self.delete(f"{self.ATLAS_BASE_URL}{resource}")
+
+
     def patch(self, resource, patch_doc):
         try:
             p = requests.patch(f"{resource}",
@@ -141,14 +153,33 @@ class APIMixin(object):
                                )
             p.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            print(patch_doc)
             raise AtlasPatchError(e, p.json()["detail"])
         return p.json()
 
-        return p.json()
+    def delete(cls, resource, auth):
+        cls.LOG.debug(f"delete({resource})")
+        try:
+            d = requests.delete(f"{resource}", auth=auth)
+            d.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise AtlasDeleteError(e, d.json()["detail"])
 
-    def get_text(self, resource):
-        return self.get(resource).text
+        return d.json()
+
+    def get_resource_by_item(self, resource):
+
+        self._log.debug(f"get_resource_by_item({resource})")
+
+        doc = self.atlas_get(resource)
+        yield from self._get_results(doc)
+        links = doc['links']
+        last_link = links[-1]
+
+        while "rel" in last_link and "next" == last_link["rel"]:
+            doc = self.get(last_link["href"])
+            yield from self._get_results(doc)
+            links = doc['links']
+            last_link = links[-1]
 
     def get_resource_by_page(self, resource):
         """

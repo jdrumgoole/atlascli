@@ -10,110 +10,50 @@ more clusters.
 
 Author:joe@joedrumgoole.com
 """
-
-from datetime import datetime
 from functools import lru_cache
-import pprint
-from enum import Enum
-
-from dateutil import parser
-from requests.exceptions import HTTPError
-
 from mongodbatlas.apimixin import APIMixin
+from mongodbatlas.atlasorganization import AtlasOrganization
+from mongodbatlas.atlasproject import AtlasProject
+from mongodbatlas.atlascluster import AtlasCluster
+
 from mongodbatlas.atlaskey import AtlasKey
 
 
-class OutputFormat(Enum):
+class API(APIMixin):
 
-    SUMMARY = "summary"
-    FULL = "full"
-
-    def __str__(self):
-        return self.value
-
-
-class AtlasResource(APIMixin):
-    """
-    Base class for Atlas Resources
-    """
-    def __init__(self, resource=None, api_key:AtlasKey=None):
-        super().__init__(api_key)
-        if resource:
-            self._resource = resource
-            if "created" in self._resource:  # convert date string to datetime obj
-                self._resource["created"] = parser.parse(self._resource["created"])
-            self._timestamp = datetime.utcnow()
-        else:
-            self._resource = None
-
-    @property
-    def timestamp(self):
-        return self._timestamp
-
-    @property
-    def id(self):
-        return self._resource["id"]
-
-    @property
-    def name(self):
-        return self._resource["name"]
-
-    def summary_string(self):
-        return f"id:'{self.id}' name:'{self.name}'"
-
-    def print_resource(self, fmt=OutputFormat.SUMMARY):
-        if fmt is OutputFormat.SUMMARY:
-            print(self.summary_string())
-        else:
-            pprint.pprint(self._resource)
-
-    def get_resource_by_item(self, resource):
-
-        self._log.debug(f"get_linked_data({resource})")
-
-        doc = self.atlas_get(resource)
-        yield from self._get_results(doc)
-        links = doc['links']
-        last_link = links[-1]
-
-        while "rel" in last_link and "next" == last_link["rel"]:
-            doc = self.get(last_link["href"])
-            yield from self._get_results(doc)
-            links = doc['links']
-            last_link = links[-1]
-
-    def get_ids(self, field):
-        for i in self.get_resource_by_item(f"/{field}"):
-            yield i["id"]
-
-    def get_names(self, field):
-        for i in self.get_resource_by_item(f"/{field}"):
-            yield i["name"]
-
-    def __str__(self):
-        return f'{pprint.pformat(self._resource)}'
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self._resource!r})"
-
-
-class AtlasOrganization(AtlasResource):
-
-    def __init__(self, org=None):
-        super().__init__(org)
+    def __init__(self, key:AtlasKey=None):
+        super().__init__(key)
 
     def get_organizations(self):
         for org in self.get_resource_by_item("/orgs"):
             yield AtlasOrganization(org)
 
+    def get_this_organizations(self):
+        for org in self.get_resource_by_item("/orgs"):
+            return AtlasOrganization(org)
+
+    @lru_cache(maxsize=500)
+    def get_one_cached_organization(self, organization_id):
+        return AtlasOrganization(self.get(f"/orgs/{organization_id}"))
+
     def get_one_organization(self, org_id):
         return AtlasOrganization(self.atlas_get(f"/orgs/{org_id}"))
 
+    def create_organization(self, name):
+        return AtlasOrganization(self.atlas_post(f"/orgs", { "name" : name}))
 
-class AtlasProject(AtlasResource):
+    def delete_organization(self, name):
+        return self.atlas_delete(f"/orgs/{name}")
 
-    def __init__(self, project=None):
-        super().__init__(project)
+    #
+    # Project Methods
+    #
+
+    def create_project(self, org_id, project_name):
+        return AtlasProject(self.atlas_post(resource=f"/groups", data={"name": project_name, "orgId": org_id}))
+
+    def delete_project(cls, project_id):
+        return cls.atlas_delete(f"/groups/{project_id}")
 
     def get_projects(self):
         for project in self.get_resource_by_item(f"/groups"):
@@ -122,30 +62,32 @@ class AtlasProject(AtlasResource):
     def get_one_project(self, project_id):
         return AtlasProject(self.atlas_get(f"/groups/{project_id}"))
 
+    @lru_cache(maxsize=500)
+    def get_one_cached_project(self, project_id):
+        return AtlasProject(self.get(f"/groups/{project_id}"))
+
     def get_project_ids(self):
         for project in self.get_resource_by_item(f"/groups"):
             yield project["id"]
 
-class AtlasCluster(AtlasResource):
-
-    def __init__(self, cluster=None):
-        super().__init__(cluster)
+    #
+    # Cluster Methods
+    #
 
     @staticmethod
     def cluster_url(project_id, cluster_name):
         return f"/groups/{project_id}/clusters/{cluster_name}"
 
-    def summary_string(self):
-        quoted_name = f"'{self.name}'"
-        if self._resource['paused']:
-            state = "paused"
-        else:
-            state = "running"
-        return f"id:'{self.id}' name:{quoted_name:24} {state}"
+    def create_cluster(self, project_id, cluster_config):
+        return AtlasCluster(self.atlas_post(f"/{project_id}/clusters", cluster_config))
 
     def get_clusters(self, project_id):
         for cluster in self.get_resource_by_item(f"/groups/{project_id}/clusters"):
             yield AtlasCluster(cluster)
+
+    @lru_cache(maxsize=500)
+    def get_one_cached_cluster(self, project_id, cluster_name):
+        return self.get(f"/groups/{project_id}/clusters/{cluster_name}")
 
     def get_one_cluster(self, project_id, cluster_name):
         return AtlasCluster(self.atlas_get(self.cluster_url(project_id, cluster_name)))
@@ -175,63 +117,10 @@ class AtlasCluster(AtlasResource):
             return None
 
 
-class AtlasAPI(APIMixin):
 
-    def __init__(self, api_key: AtlasKey = None):
-        super().__init__(api_key)
 
-    @lru_cache(maxsize=500)
-    def get_cached_organization(self, organization_id):
-        return AtlasOrganization(self.get(f"/orgs/{organization_id}"))
 
-    def get_organization_links(self):
-        """
-        A generator that pages through all the results and returns each
-        result an item at a time.
 
-        :return: A generator with the link results.
-        """
-        yield from self.get_resource_by_item("/orgs")
 
-    def get_organization_links_by_page(self):
-        self._log.debug("get_organization_links_by_page()")
-        """
-        We provide `get_organization_links_by_page` to allow the client
-        to catch exceptions and retry. With the generator API an exception
-        will mean restarting the generator from scratch.
-
-        :return: A tuple consistent of the list of results and the next
-        URL to call for the next page of results. If there are no more
-        results the URL value will be None.
-        """
-        return self.get_resource_by_page("/orgs")
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}({repr(self.api_key)})"
-
-    def get_project(self, project_id):
-            return AtlasProject(self.get(f"/groups/{project_id}"))
-
-    @lru_cache(maxsize=500)
-    def get_cached_project(self, project_id):
-        return AtlasProject(self.get(f"/groups/{project_id}"))
-
-    def get_projects(self):
-        for i in self.get_resource_by_item("/groups"):
-            yield AtlasProject(i)
-
-    def get_project_ids(self):
-        yield from self.get_ids("groups")
-
-    def get_cluster(self, project_id, cluster_name):
-        return AtlasCluster(self.get(f"/groups/{project_id}/clusters/{cluster_name}"))
-
-    @lru_cache(maxsize=500)
-    def get_cached_cluster(self, project_id, cluster_name):
-        return self.get(f"/groups/{project_id}/clusters/{cluster_name}")
-
-    def get_clusters(self, project_id):
-        for i in self.get_resource_by_item(f"/groups/{project_id}/clusters"):
-            yield AtlasCluster(i)
 
 

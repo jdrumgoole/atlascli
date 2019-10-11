@@ -16,10 +16,10 @@ import sys
 import logging
 from enum import Enum
 
-from mongodbatlas.api import AtlasOrganization, AtlasProject, AtlasCluster
 
-from mongodbatlas.api import AtlasAPI,OutputFormat
-from mongodbatlas.atlaskey import AtlasKey
+from mongodbatlas.apimixin import OutputFormat
+from mongodbatlas.api import API
+from mongodbatlas.atlaskey  import AtlasKey
 from mongodbatlas.errors import AtlasGetError, AtlasError
 
 
@@ -133,7 +133,7 @@ def main():
                    "arg or the environment variable ATLAS_PRIVATE_KEY")
             sys.exit(1)
 
-    api = AtlasAPI(AtlasKey(public_key, private_key))
+    api = API(AtlasKey(public_key, private_key))
 
     try:
         if args.resource:
@@ -150,27 +150,27 @@ def main():
         else:
             if args.org:
                 print("Organisations:")
-                for i in AtlasOrganization().get_organizations():
+                for i in api.get_organizations():
                     i.print_resource(args.format)
 
             if args.list and ResourceType.Project in args.list:
                 print("Projects:")
-                for project in AtlasProject().get_projects():
+                for project in api.get_projects():
                     project.print_resource(args.format)
                 #print_links(project_links, api.get_project, project_details)
 
             if args.list and ResourceType.Cluster in args.list:
                 print("Clusters:")
-                for project in AtlasProject().get_projects():
-                    for cluster in AtlasCluster().get_clusters(project.id):
+                for project in api.get_projects():
+                    for cluster in api.get_clusters(project.id):
                         cluster.print_resource(args.format)
 
             if args.pause_cluster:
                 for i in args.pause_cluster:
-                    for project in AtlasProject().get_projects():
-                        for cluster in AtlasCluster().get_clusters(project.id):
+                    for project in api.get_projects():
+                        for cluster in api.get_clusters(project.id):
                             if cluster.id == i :
-                                result = cluster.pause(project.id)
+                                result = api.pause(cluster.id)
                                 if result is None:
                                     print(f"Cluster {cluster.id} {cluster.name} was already paused")
                                 else:
@@ -178,10 +178,10 @@ def main():
 
             if args.resume_cluster:
                 for i in args.resume_cluster:
-                    for project in AtlasProject().get_projects():
-                        for cluster in AtlasCluster().get_clusters(project.id):
+                    for project in api.get_projects():
+                        for cluster in api.get_clusters(project.id):
                             if cluster.id == i:
-                                result = cluster.resume(project.id)
+                                result = cluster.resume(cluster.id)
                                 if result is None:
                                     print(f"Cluster {cluster.id} {cluster.name} was already running")
                                 else:

@@ -28,6 +28,10 @@ class AtlasPatchError(AtlasError):
     pass
 
 
+class AtlasDeleteError(AtlasError):
+    pass
+
+
 class AtlasEnvironmentError(ValueError):
     pass
 
