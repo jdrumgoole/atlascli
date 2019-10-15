@@ -1,11 +1,16 @@
 import pprint
 import random
 import string
-
+import json
+from datetime import datetime
 from dateutil import parser
 
 from mongodbatlas.atlaskey import AtlasKey
 from mongodbatlas.apimixin import APIMixin, OutputFormat
+
+
+def json_datetime_encoder(item:datetime):
+    return str(item)
 
 
 class AtlasResource(APIMixin):
@@ -52,8 +57,10 @@ class AtlasResource(APIMixin):
     def print_resource(self, fmt=OutputFormat.SUMMARY):
         if fmt is OutputFormat.SUMMARY:
             print(self.summary_string())
-        else:
-            pprint.pprint(self._resource)
+        elif fmt is OutputFormat.PYTHON:
+            pprint.pprint(self._resource, indent=2)
+        elif fmt is OutputFormat.JSON:
+            print(json.dumps(self._resource, indent=2, default=json_datetime_encoder))
 
     # def __call__(self):
     #     return self._resource

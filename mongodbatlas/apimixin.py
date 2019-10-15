@@ -26,8 +26,8 @@ from mongodbatlas.errors import AtlasGetError, \
 class OutputFormat(Enum):
 
     SUMMARY = "summary"
-    FULL = "full"
-
+    PYTHON = "python"
+    JSON = "json"
     def __str__(self):
         return self.value
 
