@@ -1,4 +1,7 @@
 import unittest
+import logging
+import pprint
+
 from mongodbatlas import AtlasCluster, AtlasOrganization
 from mongodbatlas.api import API
 from mongodbatlas.errors import AtlasGetError
@@ -27,13 +30,17 @@ class MyTestCase(unittest.TestCase):
         with self.assertRaises(AtlasGetError):
             self._api.get_one_project(created_project.id)
 
-    def test_cluster(self):
-        mot_cluster=self._api.get_cluster("Open Data Project", "MOT")
+    def test_get_one_cluster(self):
+        mot_cluster=self._api.get_one_cluster("5a141a774e65811a132a8010", "MOT")
+        self.assertEqual(mot_cluster.name, "MOT")
 
+    def test_cluster(self):
+        mot_cluster=self._api.get_one_cluster("5a141a774e65811a132a8010", "MOT")
+        #self._api.set_logging_level(logging.DEBUG)
         dummy_cluster = mot_cluster
-        dummy_cluster["name"] = "dummy cluster"
-        created_cluster = self._api.create_cluster("Open Data Project", dummy_cluster)
-        read_cluster = self._api.get_cluster(dummy_cluster.id)
+        dummy_cluster.name = "dummy cluster"
+        created_cluster = self._api.create_cluster("5a141a774e65811a132a8010", dummy_cluster())
+        read_cluster = self._api.get_one_cluster("5a141a774e65811a132a8010", dummy_cluster.name)
         self.assertEqual(dummy_cluster, read_cluster)
         self.api.delete_cluster(dummy_cluster.id)
 

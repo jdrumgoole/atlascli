@@ -14,6 +14,7 @@ import os
 import pprint
 import sys
 import logging
+import json
 from enum import Enum
 
 
@@ -56,12 +57,23 @@ def parse_id(s, sep=":"):
         raise ParseError(f"Bad separator '{separator}' in {s}")
     return id1, id2
 
+
 class ClusterState(Enum):
     PAUSE="pause"
     RESUME="resume"
 
     def __str__(self):
         return self.value
+
+
+class HTTPOperation(Enum):
+    GET="get"
+    POST="post"
+    PATCH="patch"
+
+    def __str__(self):
+        return self.value
+
 
 def main():
 
@@ -97,9 +109,10 @@ def main():
                              "summary or a full JSON document [default: %(default)s]")
     parser.add_argument("--debug", default=False, action="store_true",
                         help="Turn on logging at debug level")
-    parser.add_argument("--resource",
-                        help="Get resource by URL can use a base URL like 'group'"
-                             "or a full URL path use 'root' for the top level resource")
+    parser.add_argument("--http", type=HTTPOperation, choices=list(HTTPOperation),
+                        help="do a http operation")
+    parser.add_argument("--url", help="URL for HTTP operation")
+    parser.add_argument("--data", help="Data for HTTP operation")
     parser.add_argument("--itemsperpage", type=int, default=100,
                         help="No of items to return per page [default: %(default)s]")
     parser.add_argument("--pagenum", type=int, default=1,
@@ -136,17 +149,30 @@ def main():
     api = API(AtlasKey(public_key, private_key))
 
     try:
-        if args.resource:
-            if args.resource == "root":
-                r = api.atlas_get()
-            elif args.resource.startswith("http"):
-                r = api.get(args.resource, page_num=args.pagenum, items_per_page=args.itemsperpage)
+        r = None
+        if args.http:
+            if args.http == HTTPOperation.GET:
+                r = api.get(args.url)
+            elif args.http == HTTPOperation.POST:
+                if args.data:
+                    r = api.post(args.url, data=json.loads(args.data))
+            elif args.http == HTTPOperation.PATCH:
+                if args.data:
+                    r = api.post(args.url, data=json.loads(args.data))
+            if r is None:
+                print("No response")
             else:
-                if not args.resource.startswith("/"):
-                    args.resource = f"/{args.resource}"
-                r=api.atlas_get(args.resource, page_num=args.pagenum, items_per_page=args.itemsperpage)
+                pprint.pprint(r)
+            # if args.httpget == "root":
+            #     r = api.atlas_get()
+            # elif args.httpget.startswith("http"):
+            #     r = api.get(args.httpget, page_num=args.pagenum, items_per_page=args.itemsperpage)
+            # else:
+            #     if not args.httpget.startswith("/"):
+            #         args.httpget = f"/{args.httpget}"
+            #     r=api.atlas_get(args.httpget, page_num=args.pagenum, items_per_page=args.itemsperpage)
+            #
 
-            pprint.pprint(r)
         else:
             if args.org:
                 print("Organisations:")

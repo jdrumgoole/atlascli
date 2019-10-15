@@ -12,13 +12,13 @@ class AtlasResource(APIMixin):
     """
 
     def __init__(self, resource=None, api_key:AtlasKey=None):
-        super().__init__(api_key)
+        super().__init__(api_key=api_key)
         if resource:
             self._resource = resource
             if "created" in self._resource:  # convert date string to datetime obj
                 self._resource["created"] = parser.parse(self._resource["created"])
         else:
-            self._resource = None
+            self._resource = {}
 
     @property
     def timestamp(self):
@@ -32,6 +32,18 @@ class AtlasResource(APIMixin):
     def name(self):
         return self._resource["name"]
 
+    @name.setter
+    def name(self, new_name):
+        self._resource["name"] = new_name
+
+    @property
+    def resource(self):
+        return self._resource
+
+    @resource.setter
+    def resource(self, item):
+        self._resource = item
+
     def summary_string(self):
         return f"id:'{self.id}' name:'{self.name}'"
 
@@ -41,7 +53,8 @@ class AtlasResource(APIMixin):
         else:
             pprint.pprint(self._resource)
 
-
+    # def __call__(self):
+    #     return self._resource
 
     def get_ids(self, field):
         for i in self.get_resource_by_item(f"/{field}"):

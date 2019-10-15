@@ -8,19 +8,20 @@ Basic Python API to MongoDB Atlas Services
 import os
 import pprint
 import logging
-from logging import StreamHandler
+import json
 
 from requests.auth import HTTPDigestAuth
 import requests
 from enum import Enum
-from .atlaskey import AtlasKey
-from .errors import AtlasGetError, \
-                    AtlasPatchError, \
-                    AtlasPostError, \
-                    AtlasAuthenticationError,\
-                    AtlasEnvironmentError,\
-                    AtlasInitialisationError, \
-                    AtlasDeleteError
+from mongodbatlas.atlaskey import AtlasKey
+from mongodbatlas.errors import AtlasGetError, \
+                                AtlasPatchError, \
+                                AtlasPostError, \
+                                AtlasAuthenticationError,\
+                                AtlasEnvironmentError,\
+                                AtlasInitialisationError, \
+                                AtlasDeleteError
+
 
 class OutputFormat(Enum):
 
@@ -30,7 +31,7 @@ class OutputFormat(Enum):
     def __str__(self):
         return self.value
 
-class APIMixin(object):
+class APIMixin:
     """
     Basic API class for accessing MongoDB Atlas Assets
 
@@ -44,43 +45,28 @@ class APIMixin(object):
 
     ATLAS_HEADERS = {"Accept": "application/json",
                      "Content-Type": "application/json"}
-    log= logging.getLogger(__name__)
 
     def __init__(self,
-                 api_key:AtlasKey=None,
-                 page_size=100,
-                 debug=0):
+                 api_key: AtlasKey=None,
+                 page_size: int = 100):
 
         self._api_key: AtlasKey = api_key
         self._auth = None
-        self._debug = None
         self._log = logging.getLogger(__name__)
         self._page_size = page_size
 
         if self._page_size < 1 or self._page_size > 500 :
             raise AtlasInitialisationError("'page_size' must be between 1 and 500")
 
-
-        if api_key:
-            self._api_key = api_key
-        else:
+        if not self._api_key:
             self._api_key = AtlasKey.get_from_env()
-
-        if debug:
-            self._debug = debug
-        else:
-            atlas_debug_env = os.getenv("ATLAS_DEBUG", 0)
-            try:
-                self._debug = int(atlas_debug_env)
-            except ValueError:
-                raise AtlasEnvironmentError(f"Invalid value for ATLAS_DEBUG env: '{atlas_debug_env}'")
-
-        if self._debug:
-            self._log = logging.getLogger(__name__)
 
         # print(self._username)
         # print(self._api_key)
         self._auth = HTTPDigestAuth(self._api_key.public_key, self._api_key.private_key)
+
+    def set_logging_level(self, level):
+        self._log.setLevel(level)
 
     @property
     def api_key(self):
@@ -90,13 +76,18 @@ class APIMixin(object):
         self._log.debug(f"post({resource}, {data})")
 
         try:
-            #print(f"atlas_post:{resource}, {data}")
-            r = requests.post(url=resource, data=data, headers=self.ATLAS_HEADERS, auth=self._auth)
+            #print(f"requests.post(url={resource}, data={data}, headers={self.ATLAS_HEADERS}, auth={self._auth})")
+            #print("printing data")
+            #pprint.pprint(data)
+            r = requests.post(url=resource,
+                              json=data,
+                              #json=json.dumps(data),
+                              headers=self.ATLAS_HEADERS,
+                              auth=self._auth)
             #print(r.url)
             r.raise_for_status()
 
         except requests.exceptions.HTTPError as e:
-            print(f"data:{data}")
             raise AtlasPostError(e, r.json()["detail"])
         return r.json()
 
@@ -217,7 +208,7 @@ class APIMixin(object):
             raise AtlasGetError(f"No 'results' field in '{doc}'")
 
 
-class APIFormatter(object):
+class APIFormatter:
 
     def __init__(self, api):
         self._api = api

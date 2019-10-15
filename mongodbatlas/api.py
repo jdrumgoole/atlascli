@@ -79,7 +79,7 @@ class API(APIMixin):
         return f"/groups/{project_id}/clusters/{cluster_name}"
 
     def create_cluster(self, project_id, cluster_config):
-        return AtlasCluster(self.atlas_post(f"/{project_id}/clusters", cluster_config))
+        return AtlasCluster(self.atlas_post(f"/groups/{project_id}/clusters", cluster_config))
 
     def get_clusters(self, project_id):
         for cluster in self.get_resource_by_item(f"/groups/{project_id}/clusters"):
