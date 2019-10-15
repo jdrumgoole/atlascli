@@ -1,4 +1,6 @@
 import pprint
+import random
+import string
 
 from dateutil import parser
 
@@ -63,6 +65,10 @@ class AtlasResource(APIMixin):
     def get_names(self, field):
         for i in self.get_resource_by_item(f"/{field}"):
             yield i["name"]
+
+    @staticmethod
+    def random_name():
+        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
     def __str__(self):
         return f'{pprint.pformat(self._resource)}'

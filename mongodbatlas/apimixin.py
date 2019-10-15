@@ -134,7 +134,6 @@ class APIMixin:
         self._log.debug(f"atlas_delete({resource})")
         return self.delete(f"{self.ATLAS_BASE_URL}{resource}")
 
-
     def patch(self, resource, patch_doc):
         try:
             p = requests.patch(f"{resource}",
@@ -144,13 +143,13 @@ class APIMixin:
                                )
             p.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            raise AtlasPatchError(e, p.json()["detail"])
+            raise AtlasPatchError(e, p.json())
         return p.json()
 
-    def delete(cls, resource, auth):
-        cls.LOG.debug(f"delete({resource})")
+    def delete(self, resource):
+        self._log.debug(f"delete({resource})")
         try:
-            d = requests.delete(f"{resource}", auth=auth)
+            d = requests.delete(f"{resource}", headers=self.ATLAS_HEADERS, auth=self._auth)
             d.raise_for_status()
         except requests.exceptions.HTTPError as e:
             raise AtlasDeleteError(e, d.json()["detail"])
