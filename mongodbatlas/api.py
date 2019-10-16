@@ -23,8 +23,8 @@ from mongodbatlas.atlaskey import AtlasKey
 
 class API(APIMixin):
 
-    def __init__(self, key:AtlasKey=None):
-        super().__init__(key)
+    def __init__(self, atlas_key:AtlasKey=None):
+        super().__init__(atlas_key)
 
     def get_organizations(self) -> Generator[AtlasOrganization, None, None]:
         """

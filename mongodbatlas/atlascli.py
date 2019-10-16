@@ -70,8 +70,10 @@ class HTTPOperation(Enum):
 class AtlasOperation(Enum):
     CREATE = "create"
     PATCH = "patch"
-    DELETE  = "delete"
+    DELETE = "delete"
     LIST = "list"
+    PAUSE = "pause"
+    RESUME = "resume"
 
     def __str__(self):
         return self.value
@@ -112,6 +114,7 @@ def main():
                         help="ID for an AtlasOrganization")
 
     parser.add_argument("--projectid",
+                        nargs="+",
                         help="Project ID for an AtlasProject")
 
     parser.add_argument("--projectname",
@@ -258,11 +261,16 @@ def main():
                 org.print_resource(args.format)
         elif args.resource is AtlasResource.PROJECT:
             if args.projectid:
-                project = api.get_one_project(args.projectid)
-                project.print_resource(args.format)
+                AtlasResource.iter_print(args.projectid, api.get_one_project, args.format)
             else:
                 for i in api.get_projects():
                     i.print_resource(args.format)
+
+    elif args.atlasop is AtlasOperation.PAUSE:
+        pass
+    elif args.atlasop is AtlasOperation.RESUME:
+        pass
+
     # try:
     #     r = None
     #     if args.http:

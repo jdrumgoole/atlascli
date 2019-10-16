@@ -54,6 +54,11 @@ class AtlasResource(APIMixin):
     def summary_string(self):
         return f"id:'{self.id}' name:'{self.name}'"
 
+    @staticmethod
+    def iter_print(iter, func, format):
+        for i in iter:
+            func(i).print_resource(format)
+
     def print_resource(self, fmt=OutputFormat.SUMMARY):
         if fmt is OutputFormat.SUMMARY:
             print(self.summary_string())
