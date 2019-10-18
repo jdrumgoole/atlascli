@@ -124,6 +124,11 @@ class API(APIMixin):
         for cluster in self.get_resource_by_item(f"/groups/{project_id}/clusters"):
             yield AtlasCluster(cluster)
 
+    def get_clusters_for_all_projects(self):
+        for project in self.get_projects():
+            for cluster in self.get_clusters(project.id):
+                yield cluster
+
     def delete_cluster(self, project_id, cluster_name):
         """
         DELETE /api/atlas/v1.0/groups/{GROUP-ID}/clusters/{CLUSTER-NAME}

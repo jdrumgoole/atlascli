@@ -33,9 +33,9 @@ class AtlasCluster(AtlasResource):
             state = "paused"
         else:
             state = "running"
-        return f"id:'{self.id}' name:{quoted_name:24} {state}"
+        return f"Cluster      id:'{self.id}' name:{quoted_name:24} {state}"
 
-    def print_resource(self, fmt=OutputFormat.SUMMARY):
+    def print(self, fmt=OutputFormat.SUMMARY):
         if fmt is OutputFormat.SUMMARY:
             print(self.summary_string())
         else:

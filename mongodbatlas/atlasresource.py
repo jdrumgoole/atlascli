@@ -59,7 +59,7 @@ class AtlasResource(APIMixin):
         for i in iter:
             func(i).print_resource(format)
 
-    def print_resource(self, fmt=OutputFormat.SUMMARY):
+    def print(self, fmt=OutputFormat.SUMMARY):
         if fmt is OutputFormat.SUMMARY:
             print(self.summary_string())
         elif fmt is OutputFormat.PYTHON:

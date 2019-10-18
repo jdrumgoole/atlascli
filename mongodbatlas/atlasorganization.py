@@ -8,4 +8,6 @@ class AtlasOrganization(AtlasResource):
     def __init__(self, org=None):
         super().__init__(org)
 
+    def summary_string(self):
+        return f"Organization id:'{self.id}' name:'{self.name}'"
 
