@@ -34,6 +34,9 @@ class AtlasCluster(AtlasResource):
             state = "paused"
         else:
             state = "running"
+
         return f"id:'{self.id}' name:{quoted_name:24} state={state}"
+
+
 
 

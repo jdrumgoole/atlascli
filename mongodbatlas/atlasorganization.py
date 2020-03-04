@@ -8,7 +8,6 @@ class AtlasOrganization(AtlasResource):
     def __init__(self, org=None):
         super().__init__(org)
         self._projects = {}
-
         self._project_cluster_map = {}
 
     def add_projects(self, projects):
@@ -27,9 +26,10 @@ class AtlasOrganization(AtlasResource):
     #     return f"id:{self.id} name:'{self.name}'"
 
     def pprint(self):
-        print(self)
+        pprint(self)
         for project in self._projects.values():
             print(f"   {project}")
             for cluster in self._project_cluster_map[project.id].values():
                 print(f"      {cluster}")
+
 

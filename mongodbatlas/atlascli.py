@@ -308,19 +308,19 @@ def main():
     #         if args.org:
     #             print("Organisations:")
     #             for i in api.get_organizations():
-    #                 i.print_resource(args.format)
+    #                 i.print(args.format)
     #
     #         if args.list and ResourceType.Project in args.list:
     #             print("Projects:")
     #             for project in api.get_projects():
-    #                 project.print_resource(args.format)
+    #                 project.print(args.format)
     #             #print_links(project_links, api.get_project, project_details)
     #
     #         if args.list and ResourceType.Cluster in args.list:
     #             print("Clusters:")
     #             for project in api.get_projects():
     #                 for cluster in api.get_clusters(project.id):
-    #                     cluster.print_resource(args.format)
+    #                     cluster.print(args.format)
     #
     #         if args.pause_cluster:
     #             for i in args.pause_cluster:
