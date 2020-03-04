@@ -3,13 +3,13 @@ import logging
 import pprint
 
 from mongodbatlas import AtlasCluster, AtlasOrganization
-from mongodbatlas.api import API
+from mongodbatlas.atlasapi import AtlasAPI
 from mongodbatlas.errors import AtlasGetError
 
 class MyTestCase(unittest.TestCase):
 
     def setUp(self) -> None:
-        self._api = API()
+        self._api = AtlasAPI()
 
     # def test_organization(self):
     #     orig = self._org.create_organization(name="dummy1")

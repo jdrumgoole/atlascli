@@ -1,7 +1,7 @@
 import unittest
 import pprint
 
-from mongodbatlas.apimixin import APIMixin
+from mongodbatlas.atlasrequests import AtlasRequests
 from mongodbatlas.atlaskey import AtlasKey
 from mongodbatlas import AtlasProject
 
@@ -12,7 +12,7 @@ class Test_APIMixin(unittest.TestCase):
 
     def setUp(self):
         key = AtlasKey.get_from_env()
-        self._api=APIMixin(api_key=key, debug=1)
+        self._api=AtlasRequests(api_key=key, debug=1)
 
     def tearDown(self):
         pass

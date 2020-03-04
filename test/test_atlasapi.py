@@ -1,14 +1,14 @@
 import unittest
 import pprint
 
-from mongodbatlas.api import API
+from mongodbatlas.atlasapi import AtlasAPI
 from mongodbatlas import AtlasOrganization, AtlasProject
 
 
 class MyTestCase(unittest.TestCase):
 
     def setUp(self) -> None:
-        self._api = API()
+        self._api = AtlasAPI()
 
     def test_organization(self):
         org_list = list(self._api.get_organizations())

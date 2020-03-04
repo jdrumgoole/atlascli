@@ -47,7 +47,7 @@ See the section [below](#how-to-create-an-atlas-api-key) on how to create a prog
 ## Usage
 
 ```python
-from mongodbatlas.api import AtlasAPI
+from mongodbatlas.atlasapi import AtlasAPI
 
 ao
 

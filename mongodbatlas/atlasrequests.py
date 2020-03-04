@@ -31,7 +31,8 @@ class OutputFormat(Enum):
     def __str__(self):
         return self.value
 
-class APIMixin:
+
+class AtlasRequests:
     """
     Basic API class for accessing MongoDB Atlas Assets
 
@@ -70,7 +71,7 @@ class APIMixin:
 
     @property
     def api_key(self):
-        return self._api_key
+        return f"{self._api_key}"
 
     def post(self, resource, data):
         self._log.debug(f"post({resource}, {data})")
@@ -107,7 +108,7 @@ class APIMixin:
                 args = args + "&"
             args=args+f"pageNum={page_num}"
 
-        resource = resource + "/" + args
+        resource = resource + args
 
         try:
             r = requests.get(resource,
@@ -206,6 +207,16 @@ class APIMixin:
         else:
             raise AtlasGetError(f"No 'results' field in '{doc}'")
 
+    def get_ids(self, field):
+        for i in self.get_resource_by_item(f"/{field}"):
+            yield i["id"]
+
+    def get_names(self, field):
+        for i in self.get_resource_by_item(f"/{field}"):
+            yield i["name"]
+
+    def __repr__(self):
+        return f"AtlasRequests(api_key={self._api_key}, page_size={self._page_size}"
 
 class APIFormatter:
 

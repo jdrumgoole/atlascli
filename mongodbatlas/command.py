@@ -1,6 +1,6 @@
 
 from enum import Enum
-from mongodbatlas.api import API
+from mongodbatlas.atlasapi import AtlasAPI
 from mongodbatlas.atlaskey import AtlasKey
 from mongodbatlas.atlasproject import AtlasProject
 from mongodbatlas.atlascluster import AtlasCluster
@@ -29,7 +29,7 @@ class Command:
 
     def __new__(cls, atlas_key:AtlasKey=None, *args, **kwargs):
         cls.ATLAS_KEY = atlas_key
-        cls.API = API(cls.ATLAS_KEY)
+        cls.API = AtlasAPI(cls.ATLAS_KEY)
         cls._inst = super(Command, cls).__new__(cls)
         return cls._inst
 
@@ -70,7 +70,7 @@ class ListOrganizationCommand(ListCommand):
         self._resource_type = ResourceType.ORGANIZATION
         self._command_type = (CommandType.LIST, self._resource_type)
         self._class = AtlasOrganization
-        self._executor = API.get_one_organization
+        self._executor = AtlasAPI.get_one_organization
 
 
 class ListProjectCommand(Command):
@@ -80,7 +80,7 @@ class ListProjectCommand(Command):
         self._resource_type = ResourceType.PROJECT
         self._command_type = ( CommandType.LIST, self._resource_type)
         self._class = AtlasProject
-        self._executor = API.get_one_project
+        self._executor = AtlasAPI.get_one_project
 
 
 class ListClusterCommand(ListCommand):
@@ -89,7 +89,7 @@ class ListClusterCommand(ListCommand):
         super().__init__(atlas_key)
         self._resource_type = ResourceType.PROJECT
         self._command_type = (CommandType.LIST, ResourceType.CLUSTER)
-        self._executor = API.get_one_cluster
+        self._executor = AtlasAPI.get_one_cluster
         self._class = AtlasCluster
 
 if __name__ == "__main__":

@@ -1,10 +1,11 @@
-from pprint import pprint
 
 from mongodbatlas.atlasresource import AtlasResource
-from mongodbatlas.apimixin import OutputFormat
 
 
 class AtlasCluster(AtlasResource):
+    """
+    AtlasClusters are created by the API and are never instantiated directly.
+    """
 
     @classmethod
     def default_single_region_cluster(cls):
@@ -27,17 +28,12 @@ class AtlasCluster(AtlasResource):
         super().__init__(cluster_spec)
 
 
-    def summary_string(self):
+    def __str__(self):
         quoted_name = f"'{self.name}'"
         if self._resource['paused']:
             state = "paused"
         else:
             state = "running"
-        return f"id:'{self.id}' name:{quoted_name:24} {state}"
+        return f"id:'{self.id}' name:{quoted_name:24} state={state}"
 
-    def print_resource(self, fmt=OutputFormat.SUMMARY):
-        if fmt is OutputFormat.SUMMARY:
-            print(self.summary_string())
-        else:
-            pprint(self._resource)
 

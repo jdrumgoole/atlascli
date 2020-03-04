@@ -5,17 +5,17 @@ import string
 
 from mongodbatlas.atlascluster import AtlasCluster
 from mongodbatlas.atlasresource import AtlasResource
-from mongodbatlas.apimixin import APIMixin
-from mongodbatlas.api import API
+from mongodbatlas.atlasrequests import AtlasRequests
+from mongodbatlas.atlasapi import AtlasAPI
 
 
 class MyTestCase(unittest.TestCase):
 
     def setUp(self):
-        self._api = API()
+        self._api = AtlasAPI()
 
     def test_atlasresource(self):
-        mixin = APIMixin()
+        mixin = AtlasRequests()
         res = AtlasResource()
         cluster = AtlasCluster()
 

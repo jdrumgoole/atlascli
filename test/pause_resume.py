@@ -2,7 +2,7 @@ import unittest
 
 import pprint
 
-from mongodbatlas.api import AtlasAPI
+from mongodbatlas.atlasapi import AtlasAPI
 from mongodbatlas import AtlasCluster
 
 

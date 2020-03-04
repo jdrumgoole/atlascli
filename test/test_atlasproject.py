@@ -1,11 +1,11 @@
 import unittest
 
-from mongodbatlas.api import API, AtlasOrganization, AtlasProject
+from mongodbatlas.atlasapi import AtlasAPI, AtlasOrganization, AtlasProject
 from mongodbatlas.errors import AtlasGetError
 class MyTestCase(unittest.TestCase):
 
     def setUp(self) -> None:
-        self._api = API()
+        self._api = AtlasAPI()
         self._org= self._api.get_this_organization()
 
     def test_create_delete(self):

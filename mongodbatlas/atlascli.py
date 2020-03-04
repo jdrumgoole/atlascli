@@ -17,11 +17,10 @@ import logging
 import json
 from enum import Enum
 
-
-from mongodbatlas.apimixin import OutputFormat
-from mongodbatlas.api import API
-from mongodbatlas.atlaskey  import AtlasKey
-from mongodbatlas.errors import AtlasGetError, AtlasError
+from mongodbatlas.atlasrequests import OutputFormat
+from mongodbatlas.atlasapi import AtlasAPI
+from mongodbatlas.atlaskey import AtlasKey
+from mongodbatlas.opcapi import OPCAPI
 
 
 class ParseError(ValueError):
@@ -51,23 +50,23 @@ def parse_id(s, sep=":"):
 
 
 class ClusterState(Enum):
-    PAUSE="pause"
-    RESUME="resume"
+    PAUSE = "pause"
+    RESUME = "resume"
 
     def __str__(self):
         return self.value
 
 
-class HTTPOperation(Enum):
-    GET="get"
-    POST="post"
-    PATCH="patch"
+class HTTPOperationName(Enum):
+    GET = "get"
+    POST = "post"
+    PATCH = "patch"
 
     def __str__(self):
         return self.value
 
 
-class AtlasOperation(Enum):
+class AtlasOperationName(Enum):
     CREATE = "create"
     PATCH = "patch"
     DELETE = "delete"
@@ -79,7 +78,7 @@ class AtlasOperation(Enum):
         return self.value
 
 
-class AtlasResource(Enum):
+class AtlasResourceName(Enum):
     ORGANIZATION = "organization"
     PROJECT = "project"
     CLUSTER = "cluster"
@@ -87,23 +86,23 @@ class AtlasResource(Enum):
     def __str__(self):
         return self.value
 
-def main():
 
+def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--publickey", help="MongoDB Atlas public API key")
     parser.add_argument("--privatekey", help="MongoDB Atlas private API key")
 
     parser.add_argument("--atlasop",
-                        type=AtlasOperation,
+                        type=AtlasOperationName,
                         default=None,
-                        choices=list(AtlasOperation),
+                        choices=list(AtlasOperationName),
                         help="Which Atlas operation do you want to run create, modify, delete"
                         )
 
     parser.add_argument("--resource",
-                        type=AtlasResource, default=None,
-                        choices=list(AtlasResource),
+                        type=AtlasResourceName, default=None,
+                        choices=list(AtlasResourceName),
                         help="Which resource type are we operating on:"
                              "organization, project or cluster?")
 
@@ -123,25 +122,24 @@ def main():
     parser.add_argument("--clustername",
                         help="name  for an AltasCluster")
 
-
     parser.add_argument("--org", action="store_true", default=False,
                         help="Get the organisation associated with the "
                              "current API key pair [default: %(default)s]")
 
     parser.add_argument("--pause", default=[], dest="pause_cluster",
-                        action="append", 
+                        action="append",
                         help="pause named cluster in project specified by project_id "
                              "Note that clusters that have been resumed cannot be paused"
                              "for the next 60 minutes")
     parser.add_argument("--resume", default=[],
                         dest="resume_cluster", action="append",
                         help="resume named cluster in project specified by project_id")
-    parser.add_argument("--list", type=AtlasResource, default=None, choices=list(AtlasResource),
+    parser.add_argument("--list", type=AtlasResourceName, default=[], choices=list(AtlasResourceName),
                         action="append",
                         help="List all of the reachable categories [default: %(default)s]")
 
     parser.add_argument('--cluster', default=[],
-                        action="append", 
+                        action="append",
                         help="list all elements for for project_id:cluster_name")
     parser.add_argument("--project_id", default=[], dest="project_detail",
                         action="append",
@@ -152,7 +150,7 @@ def main():
                              "summary or a full JSON document [default: %(default)s]")
     parser.add_argument("--debug", default=False, action="store_true",
                         help="Turn on logging at debug level")
-    parser.add_argument("--http", type=HTTPOperation, choices=list(HTTPOperation),
+    parser.add_argument("--http", type=HTTPOperationName, choices=list(HTTPOperationName),
                         help="do a http operation")
     parser.add_argument("--url", help="URL for HTTP operation")
     parser.add_argument("--itemsperpage", type=int, default=100,
@@ -175,8 +173,8 @@ def main():
     else:
         public_key = os.getenv("ATLAS_PUBLIC_KEY")
         if public_key is None:
-            print( "you must specify an ATLAS public key via --publickey arg "
-                   "or the environment variable ATLAS_PUBLIC_KEY")
+            print("you must specify an ATLAS public key via --publickey arg "
+                  "or the environment variable ATLAS_PUBLIC_KEY")
             sys.exit(10)
 
     if args.privatekey:
@@ -184,13 +182,12 @@ def main():
     else:
         private_key = os.getenv("ATLAS_PRIVATE_KEY")
         if private_key is None:
-            print( "you must specify an an ATLAS private key via --privatekey"
-                   "arg or the environment variable ATLAS_PRIVATE_KEY")
+            print("you must specify an an ATLAS private key via --privatekey"
+                  "arg or the environment variable ATLAS_PRIVATE_KEY")
             sys.exit(1)
 
-    api = API(AtlasKey(public_key, private_key))
+    api = OPCAPI(AtlasKey(public_key, private_key))
     org = api.get_this_organization()
-
     data = None
     if args.data:
         try:
@@ -201,26 +198,26 @@ def main():
             print(f"error:{e}")
             sys.exit(1)
 
-    if args.atlasop is AtlasOperation.CREATE:
-        if args.resource is AtlasResource.ORGANIZATION:
+    if args.atlasop is AtlasOperationName.CREATE:
+        if args.resource is AtlasResourceName.ORGANIZATION:
             print('No support for organization creation at the moment use the UI')
-        elif args.resource is AtlasResource.PROJECT:
+        elif args.resource is AtlasResourceName.PROJECT:
             if args.projectname:
                 project = api.create_project(org.id, args.projectname)
                 project.print_resource(args.format)
             else:
                 print("You must specify a project name via --projectname")
-        else: # Cluster
+        else:  # Cluster
             if args.projectid:
-                    if data:
-                        cluster = api.create_cluster(args.project_id, args.data)
-                        cluster.print_resource(args.format)
-                    else:
-                        print("You must specify a JSON data object via --data")
-    elif args.atlasop is AtlasOperation.PATCH:
-        if args.resource is AtlasResource.ORGANIZATION:
+                if data:
+                    cluster = api.create_cluster(args.project_id, args.data)
+                    cluster.print_resource(args.format)
+                else:
+                    print("You must specify a JSON data object via --data")
+    elif args.atlasop is AtlasOperationName.PATCH:
+        if args.resource is AtlasResourceName.ORGANIZATION:
             print("No support for modifying organizations in this release")
-        elif args.resource is AtlasResource.PROJECT:
+        elif args.resource is AtlasResourceName.PROJECT:
             print("There is not modify capability for projects in MongoDB Atlas")
         else:  # Cluster
             if args.projectid:
@@ -233,15 +230,15 @@ def main():
                     print(f"You must specify a cluster name via --clustername")
             else:
                 print(f"You must specify a project id via --projectid")
-    elif args.atlasop is AtlasOperation.DELETE:
-        if args.resource is AtlasResource.ORGANIZATION:
+    elif args.atlasop is AtlasOperationName.DELETE:
+        if args.resource is AtlasResourceName.ORGANIZATION:
             print("You cannot delete organisations via atlascli at this time")
-        elif args.resource is AtlasResource.PROJECT:
+        elif args.resource is AtlasResourceName.PROJECT:
             if args.projectid:
                 project = api.get_one_project(args.projectid)
                 api.delete_project(args.projectid)
                 print(f"Deleted project: {project.summary_string()}")
-        elif args.resource is AtlasResource.CLUSTER:
+        elif args.resource is AtlasResourceName.CLUSTER:
             if args.projectid:
                 if args.clustername:
                     cluster = api.get_one_cluster(args.projectid, args.clustername)
@@ -252,25 +249,36 @@ def main():
             else:
                 print("You must specify a project id via --projectid")
 
-    elif args.atlasop is AtlasOperation.LIST:
-        if args.resource is AtlasResource.ORGANIZATION:
+    elif args.atlasop is AtlasOperationName.LIST:
+        if args.resource is None:
+            org = api.get_organization_and_clusters()
+            org.pprint()
+        elif args.resource is AtlasResourceName.ORGANIZATION:
             if args.orgid:
-                org=api.get_one_organization(args.orgid)
+                org = api.get_one_organization(args.orgid)
                 org.print_resource(args.format)
             else:
                 org.print_resource(args.format)
-        elif args.resource is AtlasResource.PROJECT:
+        elif args.resource is AtlasResourceName.PROJECT:
             if args.projectid:
-                AtlasResource.iter_print(args.projectid, api.get_one_project, args.format)
+                AtlasResourceName.iter_print(args.projectid, api.get_one_project, args.format)
             else:
                 for i in api.get_projects():
                     i.print_resource(args.format)
 
-    elif args.atlasop is AtlasOperation.PAUSE:
-        pass
-    elif args.atlasop is AtlasOperation.RESUME:
-        pass
+    elif args.atlasop is AtlasOperationName.PAUSE:
+        if args.resource is AtlasResourceName.PROJECT:
+            for cluster_name in args.pause:
+                cluster = api.get_one_cluster(args.project_id, cluster_name)
+                print(f"Pausing {cluster.name}")
+                doc = cluster.pause()
 
+    elif args.atlasop is AtlasOperationName.RESUME:
+        if args.resource is AtlasResourceName.PROJECT:
+            for cluster_name in args.resume:
+                cluster = api.get_one_cluster(args.project_id)
+                print(f"Resuming cluster {cluster.name}")
+                doc = cluster.resume()
     # try:
     #     r = None
     #     if args.http:
@@ -340,6 +348,7 @@ def main():
     #     print("Ctrl-C: Exiting...")
     # except AtlasError as e:
     #     print(f"AtlasError:{e}")
+
 
 if __name__ == "__main__":
     main()
