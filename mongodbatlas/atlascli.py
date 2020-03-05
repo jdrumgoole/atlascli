@@ -17,11 +17,9 @@ import logging
 import json
 from enum import Enum
 
-from mongodbatlas.atlasrequests import OutputFormat
-from mongodbatlas.atlasapi import AtlasAPI
 from mongodbatlas.atlaskey import AtlasKey
 from mongodbatlas.opcapi import OPCAPI
-
+from mongodbatlas.version import __VERSION__
 
 class ParseError(ValueError):
     pass
@@ -88,7 +86,10 @@ class AtlasResourceName(Enum):
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=
+                                     f"A command line program to list organizations,"
+                                     f"projects and clusters on a MongoDB Atlas organization.",
+                                     epilog=f"Version: {__VERSION__}")
 
     parser.add_argument("--publickey", help="MongoDB Atlas public API key")
     parser.add_argument("--privatekey", help="MongoDB Atlas private API key")
@@ -177,6 +178,8 @@ def main():
 
     logging.debug("logging is on at DEBUG level")
 
+    # Stop noisy urllib3 info logs
+    logging.getLogger("requests").setLevel(logging.WARNING)
     if args.publickey:
         public_key = args.publickey
     else:

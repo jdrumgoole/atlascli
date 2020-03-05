@@ -7,10 +7,8 @@
 import io
 import os
 
-
 from setuptools import find_packages, setup
 
-from mongodbatlas.version import __VERSION__
 
 # Package meta-data.
 NAME = 'mongodbatlas'
@@ -19,7 +17,7 @@ URL = 'https://github.com/jdrumgoole/MongoDB-Atlas-API'
 EMAIL = 'joe@joedrumgoole.com'
 AUTHOR = 'Joe Drumgoole'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = __VERSION__
+VERSION = "0.2.5b5"
 
 
 # What packages are optional?
@@ -54,7 +52,9 @@ setup(
     python_requires=REQUIRES_PYTHON,
     url=URL,
     install_requires=['requests',
-                      'dateutils'],
+                      'python-dateutil'],
+    setup_requires=['requests',
+                    'python-dateutil'],
     packages=find_packages(),
     tests_require=["nose"],
     license='Apache 2.0',
