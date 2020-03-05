@@ -1,3 +1,4 @@
+import pprint
 
 from mongodbatlas.atlasresource import AtlasResource
 
@@ -34,8 +35,9 @@ class AtlasCluster(AtlasResource):
         else:
             state = "running"
 
-        return f"Cluster id:'{self.id}' name:{quoted_name:24} state={state}"
+        return f"Cluster ID:'{self.id}' name:{quoted_name:24} state={state}"
 
-
+    def __str__(self):
+        return f"{pprint.pformat(self._resource)}"
 
 

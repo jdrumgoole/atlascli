@@ -97,7 +97,7 @@ def main():
                         type=AtlasOperationName,
                         default=None,
                         choices=list(AtlasOperationName),
-                        help="Which Atlas operation do you want to run create, modify, delete"
+                        help="Which Atlas operation do you want to run create, modify, delete, list, pause, resume"
                         )
 
     parser.add_argument("--resource",
@@ -106,15 +106,11 @@ def main():
                         help="Which resource type are we operating on:"
                              "organization, project or cluster?")
 
-    parser.add_argument("--data",
-                        help="Arguments for create and modify arguments (Python dict)")
+    # parser.add_argument("--data",
+    #                     help="Arguments for create and modify arguments (Python dict)")
 
-    parser.add_argument("--orgid",
-                        help="ID for an AtlasOrganization")
-
-    parser.add_argument("--projectid",
-                        nargs="+",
-                        help="Project ID for an AtlasProject")
+    # parser.add_argument("--orgid",
+    #                     help="ID for an AtlasOrganization")
 
     parser.add_argument("--projectname",
                         help="Project name for an AtlasProject")
@@ -131,12 +127,25 @@ def main():
                         help="pause named cluster in project specified by project_id "
                              "Note that clusters that have been resumed cannot be paused"
                              "for the next 60 minutes")
+
     parser.add_argument("--resume", default=[],
                         dest="resume_cluster", action="append",
                         help="resume named cluster in project specified by project_id")
-    parser.add_argument("--list", type=AtlasResourceName, default=[], choices=list(AtlasResourceName),
-                        action="append",
-                        help="List all of the reachable categories [default: %(default)s]")
+
+    parser.add_argument("--list",
+                        action="store_true",
+                        default=False,
+                        help="List everything in the organization")
+
+    parser.add_argument("--listproj",
+                        action="store_true",
+                        default=False,
+                        help="List all projects")
+
+    parser.add_argument("--listcluster",
+                        action="store_true",
+                        default=False,
+                        help="List all clusters")
 
     parser.add_argument('--cluster', default=[],
                         action="append",
@@ -144,19 +153,19 @@ def main():
     parser.add_argument("--project_id", default=[], dest="project_id_list",
                         action="append",
                         help="specify project for cluster that is to be paused")
-    parser.add_argument('--format', type=OutputFormat,
-                        default=OutputFormat.SUMMARY, choices=list(OutputFormat),
-                        help="The format to output data either in a single line "
-                             "summary or a full JSON document [default: %(default)s]")
+    # parser.add_argument('--format', type=OutputFormat,
+    #                     default=OutputFormat.SUMMARY, choices=list(OutputFormat),
+    #                     help="The format to output data either in a single line "
+    #                          "summary or a full JSON document [default: %(default)s]")
     parser.add_argument("--debug", default=False, action="store_true",
                         help="Turn on logging at debug level")
-    parser.add_argument("--http", type=HTTPOperationName, choices=list(HTTPOperationName),
-                        help="do a http operation")
-    parser.add_argument("--url", help="URL for HTTP operation")
-    parser.add_argument("--itemsperpage", type=int, default=100,
-                        help="No of items to return per page [default: %(default)s]")
-    parser.add_argument("--pagenum", type=int, default=1,
-                        help="Page to return [default: %(default)s]")
+    # parser.add_argument("--http", type=HTTPOperationName, choices=list(HTTPOperationName),
+    #                     help="do a http operation")
+    # parser.add_argument("--url", help="URL for HTTP operation")
+    # parser.add_argument("--itemsperpage", type=int, default=100,
+    #                     help="No of items to return per page [default: %(default)s]")
+    # parser.add_argument("--pagenum", type=int, default=1,
+    #                     help="Page to return [default: %(default)s]")
     args = parser.parse_args()
 
     if args.debug:
@@ -188,17 +197,20 @@ def main():
 
     api = OPCAPI(AtlasKey(public_key, private_key))
     org = api.get_this_organization()
-    data = None
-    if args.data:
-        try:
-            data = json.loads(args.data)
-        except json.JSONDecodeError as e:
-            print("Error decoding:")
-            print(f"{args.data}")
-            print(f"error:{e}")
-            sys.exit(1)
+
+    # data = None
+    # if args.data:
+    #     try:
+    #         data = json.loads(args.data)
+    #     except json.JSONDecodeError as e:
+    #         print("Error decoding:")
+    #         print(f"{args.data}")
+    #         print(f"error:{e}")
+    #         sys.exit(1)
 
     if args.atlasop is AtlasOperationName.CREATE:
+        print("Not supported yet")
+        sys.exit(1)
         if args.resource is AtlasResourceName.ORGANIZATION:
             print('No support for organization creation at the moment use the UI')
         elif args.resource is AtlasResourceName.PROJECT:
@@ -215,10 +227,12 @@ def main():
                 else:
                     print("You must specify a JSON data object via --data")
     elif args.atlasop is AtlasOperationName.PATCH:
+        print("Not supported yet")
+        sys.exit(1)
         if args.resource is AtlasResourceName.ORGANIZATION:
             print("No support for modifying organizations in this release")
         elif args.resource is AtlasResourceName.PROJECT:
-            print("There is not modify capability for projects in MongoDB Atlas")
+            print("There is no modify capability for projects in MongoDB Atlas")
         else:  # Cluster
             if args.projectid:
                 if args.clustername:
@@ -231,6 +245,8 @@ def main():
             else:
                 print(f"You must specify a project id via --projectid")
     elif args.atlasop is AtlasOperationName.DELETE:
+        print("Not supported yet")
+        sys.exit(1)
         if args.resource is AtlasResourceName.ORGANIZATION:
             print("You cannot delete organisations via atlascli at this time")
         elif args.resource is AtlasResourceName.PROJECT:
@@ -249,36 +265,44 @@ def main():
             else:
                 print("You must specify a project id via --projectid")
 
-    elif args.atlasop is AtlasOperationName.LIST:
-        if args.resource is None:
-            org = api.get_organization_and_clusters()
-            org.pprint()
-        elif args.resource is AtlasResourceName.ORGANIZATION:
-            if args.orgid:
-                org = api.get_one_organization(args.orgid)
-                org.print_resource(args.format)
-            else:
-                org.print_resource(args.format)
-        elif args.resource is AtlasResourceName.PROJECT:
-            if args.projectid:
-                AtlasResourceName.iter_print(args.projectid, api.get_one_project, args.format)
-            else:
-                for i in api.get_projects():
-                    i.print_resource(args.format)
+    if args.list:
+        org = api.get_organization_and_clusters()
+        print(org)
+        org.pprint()
+    if args.listproj :
+        if args.project_id_list:
+            for project_id in args.project_id_list:
+                print(api.get_one_project(project_id))
+        else:
+            for project in api.get_projects():
+                print(f"\nProject: '{project.name}'")
+                print(project)
+    if args.listcluster:
+        if args.project_id_list:
+            for project_id in args.project_id_list:
+                clusters = api.get_clusters(project_id)
+                for cluster in clusters:
+                    print(f"\nProject: '{project.id}' Cluster: '{cluster.name}'")
+                    print(cluster)
+        else:
+            for project in api.get_projects():
+                clusters = api.get_clusters(project.id)
+                for cluster in clusters:
+                    print(f"\nProject: '{project.id}' Cluster: '{cluster.name}'")
+                    print(cluster)
 
-    elif args.atlasop is AtlasOperationName.PAUSE:
-        if args.resource is AtlasResourceName.PROJECT:
-            for cluster_name in args.pause_cluster:
-                print(f"Pausing {cluster_name}")
-                result = api.pause_cluster(args.project_id_list[0], cluster_name)
-                pprint.pprint(result)
 
-    elif args.atlasop is AtlasOperationName.RESUME:
-        if args.resource is AtlasResourceName.PROJECT:
-            for cluster_name in args.resume:
-                cluster = api.get_one_cluster(args.project_id)
-                print(f"Resuming cluster {cluster.name}")
-                doc = cluster.resume()
+    if args.pause_cluster:
+        for cluster_name in args.pause_cluster:
+            print(f"Pausing {cluster_name}")
+            result = api.pause_cluster(args.project_id_list[0], cluster_name)
+            pprint.pprint(result)
+
+    if args.resume_cluster:
+        for cluster_name in args.resume_cluster:
+            print(f"Resuming cluster {cluster_name}")
+            result = api.resume_cluster(args.project_id_list[0], cluster_name)
+            pprint.pprint(result)
     # try:
     #     r = None
     #     if args.http:

@@ -20,16 +20,19 @@ class AtlasOrganization(AtlasResource):
             self._project_cluster_map[ project_id][cluster.id] = cluster
         return self._project_cluster_map[ project_id]
 
+    def summary(self):
+        return f"Organization ID:{self.id} Name:'{self.name}'"
+
     def __str__(self):
-        return f"Organization:\n{pprint.pformat(self._resource)}"
+        return f"{pprint.pformat(self._resource)}"
     # def __str__(self):
     #     return f"id:{self.id} name:'{self.name}'"
 
     def pprint(self):
-        print(self)
+        print(self.summary())
         for project in self._projects.values():
-            print(f"   {project}")
+            print(f"     {project.summary()}")
             for cluster in self._project_cluster_map[project.id].values():
-                print(f"      {cluster.summary()}")
+                print(f"       {cluster.summary()}")
 
 
