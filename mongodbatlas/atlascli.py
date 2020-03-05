@@ -93,18 +93,18 @@ def main():
     parser.add_argument("--publickey", help="MongoDB Atlas public API key")
     parser.add_argument("--privatekey", help="MongoDB Atlas private API key")
 
-    parser.add_argument("--atlasop",
-                        type=AtlasOperationName,
-                        default=None,
-                        choices=list(AtlasOperationName),
-                        help="Which Atlas operation do you want to run create, modify, delete, list, pause, resume"
-                        )
-
-    parser.add_argument("--resource",
-                        type=AtlasResourceName, default=None,
-                        choices=list(AtlasResourceName),
-                        help="Which resource type are we operating on:"
-                             "organization, project or cluster?")
+    # parser.add_argument("--atlasop",
+    #                     type=AtlasOperationName,
+    #                     default=None,
+    #                     choices=list(AtlasOperationName),
+    #                     help="Which Atlas operation do you want to run create, modify, delete, list, pause, resume"
+    #                     )
+    #
+    # parser.add_argument("--resource",
+    #                     type=AtlasResourceName, default=None,
+    #                     choices=list(AtlasResourceName),
+    #                     help="Which resource type are we operating on:"
+    #                          "organization, project or cluster?")
 
     # parser.add_argument("--data",
     #                     help="Arguments for create and modify arguments (Python dict)")
@@ -112,15 +112,15 @@ def main():
     # parser.add_argument("--orgid",
     #                     help="ID for an AtlasOrganization")
 
-    parser.add_argument("--projectname",
-                        help="Project name for an AtlasProject")
+    # parser.add_argument("--projectname",
+    #                     help="Project name for an AtlasProject")
+    #
+    # parser.add_argument("--clustername",
+    #                     help="name  for an AltasCluster")
 
-    parser.add_argument("--clustername",
-                        help="name  for an AltasCluster")
-
-    parser.add_argument("--org", action="store_true", default=False,
-                        help="Get the organisation associated with the "
-                             "current API key pair [default: %(default)s]")
+    # parser.add_argument("--org", action="store_true", default=False,
+    #                     help="Get the organisation associated with the "
+    #                          "current API key pair [default: %(default)s]")
 
     parser.add_argument("--pause", default=[], dest="pause_cluster",
                         action="append",
@@ -208,62 +208,62 @@ def main():
     #         print(f"error:{e}")
     #         sys.exit(1)
 
-    if args.atlasop is AtlasOperationName.CREATE:
-        print("Not supported yet")
-        sys.exit(1)
-        if args.resource is AtlasResourceName.ORGANIZATION:
-            print('No support for organization creation at the moment use the UI')
-        elif args.resource is AtlasResourceName.PROJECT:
-            if args.projectname:
-                project = api.create_project(org.id, args.projectname)
-                project.print_resource(args.format)
-            else:
-                print("You must specify a project name via --projectname")
-        else:  # Cluster
-            if args.projectid:
-                if data:
-                    cluster = api.create_cluster(args.project_id, args.data)
-                    cluster.print_resource(args.format)
-                else:
-                    print("You must specify a JSON data object via --data")
-    elif args.atlasop is AtlasOperationName.PATCH:
-        print("Not supported yet")
-        sys.exit(1)
-        if args.resource is AtlasResourceName.ORGANIZATION:
-            print("No support for modifying organizations in this release")
-        elif args.resource is AtlasResourceName.PROJECT:
-            print("There is no modify capability for projects in MongoDB Atlas")
-        else:  # Cluster
-            if args.projectid:
-                if args.clustername:
-                    cluster = api.modify_cluster(args.projectid,
-                                                 args.clustername,
-                                                 args.data)
-                    cluster.print_resource(args.format)
-                else:
-                    print(f"You must specify a cluster name via --clustername")
-            else:
-                print(f"You must specify a project id via --projectid")
-    elif args.atlasop is AtlasOperationName.DELETE:
-        print("Not supported yet")
-        sys.exit(1)
-        if args.resource is AtlasResourceName.ORGANIZATION:
-            print("You cannot delete organisations via atlascli at this time")
-        elif args.resource is AtlasResourceName.PROJECT:
-            if args.projectid:
-                project = api.get_one_project(args.projectid)
-                api.delete_project(args.projectid)
-                print(f"Deleted project: {project.summary_string()}")
-        elif args.resource is AtlasResourceName.CLUSTER:
-            if args.projectid:
-                if args.clustername:
-                    cluster = api.get_one_cluster(args.project_id[0], args.clustername)
-                    api.delete_cluster(args.projectid, args.clustername)
-                    print(f"Deleted cluster: {cluster.summary_string()}")
-                else:
-                    print("You must specify a a cluster name via --clustername")
-            else:
-                print("You must specify a project id via --projectid")
+    # if args.atlasop is AtlasOperationName.CREATE:
+    #     print("Not supported yet")
+    #     sys.exit(1)
+    #     if args.resource is AtlasResourceName.ORGANIZATION:
+    #         print('No support for organization creation at the moment use the UI')
+    #     elif args.resource is AtlasResourceName.PROJECT:
+    #         if args.projectname:
+    #             project = api.create_project(org.id, args.projectname)
+    #             project.print_resource(args.format)
+    #         else:
+    #             print("You must specify a project name via --projectname")
+    #     else:  # Cluster
+    #         if args.projectid:
+    #             if data:
+    #                 cluster = api.create_cluster(args.project_id, args.data)
+    #                 cluster.print_resource(args.format)
+    #             else:
+    #                 print("You must specify a JSON data object via --data")
+    # elif args.atlasop is AtlasOperationName.PATCH:
+    #     print("Not supported yet")
+    #     sys.exit(1)
+    #     if args.resource is AtlasResourceName.ORGANIZATION:
+    #         print("No support for modifying organizations in this release")
+    #     elif args.resource is AtlasResourceName.PROJECT:
+    #         print("There is no modify capability for projects in MongoDB Atlas")
+    #     else:  # Cluster
+    #         if args.projectid:
+    #             if args.clustername:
+    #                 cluster = api.modify_cluster(args.projectid,
+    #                                              args.clustername,
+    #                                              args.data)
+    #                 cluster.print_resource(args.format)
+    #             else:
+    #                 print(f"You must specify a cluster name via --clustername")
+    #         else:
+    #             print(f"You must specify a project id via --projectid")
+    # elif args.atlasop is AtlasOperationName.DELETE:
+    #     print("Not supported yet")
+    #     sys.exit(1)
+    #     if args.resource is AtlasResourceName.ORGANIZATION:
+    #         print("You cannot delete organisations via atlascli at this time")
+    #     elif args.resource is AtlasResourceName.PROJECT:
+    #         if args.projectid:
+    #             project = api.get_one_project(args.projectid)
+    #             api.delete_project(args.projectid)
+    #             print(f"Deleted project: {project.summary_string()}")
+    #     elif args.resource is AtlasResourceName.CLUSTER:
+    #         if args.projectid:
+    #             if args.clustername:
+    #                 cluster = api.get_one_cluster(args.project_id[0], args.clustername)
+    #                 api.delete_cluster(args.projectid, args.clustername)
+    #                 print(f"Deleted cluster: {cluster.summary_string()}")
+    #             else:
+    #                 print("You must specify a a cluster name via --clustername")
+    #         else:
+    #             print("You must specify a project id via --projectid")
 
     if args.list:
         org = api.get_organization_and_clusters()

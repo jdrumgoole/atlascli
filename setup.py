@@ -42,12 +42,10 @@ try:
 except FileNotFoundError:
     long_description = DESCRIPTION
 
-
-
 # Where the magic happens:
 setup(
     name=NAME,
-    version="0.2.3b2",
+    version=VERSION,
     description=DESCRIPTION,
     long_description=long_description,
     long_description_content_type='text/markdown',
