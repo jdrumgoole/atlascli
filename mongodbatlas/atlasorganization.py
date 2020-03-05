@@ -26,10 +26,10 @@ class AtlasOrganization(AtlasResource):
     #     return f"id:{self.id} name:'{self.name}'"
 
     def pprint(self):
-        pprint(self)
+        print(self)
         for project in self._projects.values():
             print(f"   {project}")
             for cluster in self._project_cluster_map[project.id].values():
-                print(f"      {cluster}")
+                print(f"      {cluster.summary()}")
 
 

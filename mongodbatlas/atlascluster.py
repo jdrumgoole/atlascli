@@ -27,15 +27,14 @@ class AtlasCluster(AtlasResource):
     def __init__(self, cluster_spec=None):
         super().__init__(cluster_spec)
 
-
-    def __str__(self):
+    def summary(self):
         quoted_name = f"'{self.name}'"
         if self._resource['paused']:
             state = "paused"
         else:
             state = "running"
 
-        return f"id:'{self.id}' name:{quoted_name:24} state={state}"
+        return f"Cluster id:'{self.id}' name:{quoted_name:24} state={state}"
 
 
 

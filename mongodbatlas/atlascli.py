@@ -141,7 +141,7 @@ def main():
     parser.add_argument('--cluster', default=[],
                         action="append",
                         help="list all elements for for project_id:cluster_name")
-    parser.add_argument("--project_id", default=[], dest="project_detail",
+    parser.add_argument("--project_id", default=[], dest="project_id_list",
                         action="append",
                         help="specify project for cluster that is to be paused")
     parser.add_argument('--format', type=OutputFormat,
@@ -241,7 +241,7 @@ def main():
         elif args.resource is AtlasResourceName.CLUSTER:
             if args.projectid:
                 if args.clustername:
-                    cluster = api.get_one_cluster(args.projectid, args.clustername)
+                    cluster = api.get_one_cluster(args.project_id[0], args.clustername)
                     api.delete_cluster(args.projectid, args.clustername)
                     print(f"Deleted cluster: {cluster.summary_string()}")
                 else:
@@ -268,10 +268,10 @@ def main():
 
     elif args.atlasop is AtlasOperationName.PAUSE:
         if args.resource is AtlasResourceName.PROJECT:
-            for cluster_name in args.pause:
-                cluster = api.get_one_cluster(args.project_id, cluster_name)
-                print(f"Pausing {cluster.name}")
-                doc = cluster.pause()
+            for cluster_name in args.pause_cluster:
+                print(f"Pausing {cluster_name}")
+                result = api.pause_cluster(args.project_id_list[0], cluster_name)
+                pprint.pprint(result)
 
     elif args.atlasop is AtlasOperationName.RESUME:
         if args.resource is AtlasResourceName.PROJECT:
