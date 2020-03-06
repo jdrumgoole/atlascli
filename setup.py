@@ -17,7 +17,7 @@ URL = 'https://github.com/jdrumgoole/MongoDB-Atlas-API'
 EMAIL = 'joe@joedrumgoole.com'
 AUTHOR = 'Joe Drumgoole'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = "0.2.5b5"
+VERSION = "0.2.5b6"
 
 
 # What packages are optional?
