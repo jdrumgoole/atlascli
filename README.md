@@ -8,19 +8,29 @@ a complete and well documented [REST API](https://docs.atlas.mongodb.com/api/).
 The easiest way to install the `mongodbatlas` is with `pip`.
 
 ```shell
-$ pip install mongodbatlas
+C:\Users\joe>pip install mongodbatlas
+Looking in indexes: https://test.pypi.org/simple/
+Processing c:\users\joe\appdata\local\pip\cache\wheels\6c\2f\e8\7f33b6b37b40424f1d00d54048aaa63fd47c7b289e790a997d\mongodbatlas-0.2.5b5-py3-none-any.whl
+Requirement already satisfied: python-dateutil in c:\users\joe\.virtualenvs\joe-93pxapbd\lib\site-packages (from mongodbatlas) (2.8.1)
+Requirement already satisfied: requests in c:\users\joe\.virtualenvs\joe-93pxapbd\lib\site-packages (from mongodbatlas) (2.5.4.1)
+Requirement already satisfied: six>=1.5 in c:\users\joe\.virtualenvs\joe-93pxapbd\lib\site-packages (from python-dateutil->mongodbatlas) (1.10.0)
+Installing collected packages: mongodbatlas
+Successfully installed mongodbatlas-0.2.5b
+
+C:\Users\joe>
 ```
 
 Once the installation completes you can confirm it has worked by running
 
 ```shell
-$ atlascli -h
-usage: atlascli [-h] [--publickey PUBLICKEY] [--privatekey PRIVATEKEY] [--org]
-                [--pause PAUSE_CLUSTER] [--resume RESUME_CLUSTER]
-                [--list {projects,clusters}] [--cluster CLUSTER]
-                [--project_id PROJECT_DETAIL] [--format {summary,full}]
-                [--debug] [--resource RESOURCE] [--itemsperpage ITEMSPERPAGE]
-                [--pagenum PAGENUM]
+C:\Users\joe>atlascli -h
+usage: atlascli [-h] [--publickey PUBLICKEY] [--privatekey PRIVATEKEY]
+                [--pause PAUSE_CLUSTER] [--resume RESUME_CLUSTER] [--list]
+                [--listproj] [--listcluster] [--cluster CLUSTER]
+                [--project_id PROJECT_ID_LIST] [--debug]
+
+A command line program to list organizations,projects and clusters on a
+MongoDB Atlas organization.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -28,7 +38,24 @@ optional arguments:
                         MongoDB Atlas public API key
   --privatekey PRIVATEKEY
                         MongoDB Atlas private API key
-...
+  --pause PAUSE_CLUSTER
+                        pause named cluster in project specified by project_id
+                        Note that clusters that have been resumed cannot be
+                        pausedfor the next 60 minutes
+  --resume RESUME_CLUSTER
+                        resume named cluster in project specified by
+                        project_id
+  --list                List everything in the organization
+  --listproj            List all projects
+  --listcluster         List all clusters
+  --cluster CLUSTER     list all elements for for project_id:cluster_name
+  --project_id PROJECT_ID_LIST
+                        specify project for cluster that is to be paused
+  --debug               Turn on logging at debug level
+
+Version: 0.2.5b5
+
+C:\Users\joe>
 ```
 
 
@@ -42,16 +69,11 @@ The library assumes the existence of two environment variables:
 * `ATLAS_PRIVATE_KEY` : The private key defined by the Atlas programmatic API
 key.
 
+These can be passed in on the command line as well as parameters 
+`--publickey` and `--privatekey`.
+
 See the section [below](#how-to-create-an-atlas-api-key) on how to create a programmatic Atlas API key.
 
-## Usage
-
-```python
-from mongodbatlas.atlasapi import AtlasAPI
-
-ao
-
-```
 ## How to create an Atlas API Key
 You can create keys at the Organization level by selecting the access menu item 
 on the left hand side menu:
@@ -81,4 +103,6 @@ You are now ready to start using your API key.
 
 ## Using your keys
 
-Both parts of the key required to acc
+Both parts of the key required to access your account. Rather than passing them 
+in on the command line the `atlascli` program these can read them from the environment
+variables `ATLAS_PRIVATE_KEY` and `ATLAS_PUBLIC_KEY`. 

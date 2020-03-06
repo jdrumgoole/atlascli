@@ -78,4 +78,5 @@ class AtlasResource:
         return f"{pprint.pformat(self._resource)}"
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(resource={self._resource!r})"
+        res=f"{pprint.pformat(self._resource, width=40)}"
+        return f"{self.__class__.__name__}(resource={res})"

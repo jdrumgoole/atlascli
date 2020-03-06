@@ -91,8 +91,10 @@ def main():
                                      f"projects and clusters on a MongoDB Atlas organization.",
                                      epilog=f"Version: {__VERSION__}")
 
-    parser.add_argument("--publickey", help="MongoDB Atlas public API key")
-    parser.add_argument("--privatekey", help="MongoDB Atlas private API key")
+    parser.add_argument("--publickey", help="MongoDB Atlas public API key."
+                                            "Can be read from the environment variable ATLAS_PUBLIC_KEY")
+    parser.add_argument("--privatekey", help="MongoDB Atlas private API key."
+                                             "Can be read from the environment variable ATLAS_PRIVATE_KEY")
 
     # parser.add_argument("--atlasop",
     #                     type=AtlasOperationName,

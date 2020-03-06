@@ -4,7 +4,7 @@ from logging import NullHandler
 
 logging.getLogger(__name__).addHandler(NullHandler())
 
-from .atlasapi import AtlasAPI
+from .opcapi import OPCAPI
 from mongodbatlas.atlasorganization import AtlasOrganization
 from mongodbatlas.atlasproject import AtlasProject
 from mongodbatlas.atlascluster import AtlasCluster
