@@ -18,8 +18,10 @@ import json
 from enum import Enum
 
 from mongodbatlas.atlaskey import AtlasKey
+from mongodbatlas.errors import AtlasError
 from mongodbatlas.opcapi import OPCAPI
 from mongodbatlas.version import __VERSION__
+
 
 class ParseError(ValueError):
     pass
@@ -88,7 +90,9 @@ class AtlasResourceName(Enum):
 def main():
     parser = argparse.ArgumentParser(description=
                                      f"A command line program to list organizations,"
-                                     f"projects and clusters on a MongoDB Atlas organization.",
+                                     f"projects and clusters on a MongoDB Atlas organization."
+                                     f"You need to enable programmatic keys for this program"
+                                     f" to work. See https://docs.atlas.mongodb.com/reference/api/apiKeys/ ",
                                      epilog=f"Version: {__VERSION__}")
 
     parser.add_argument("--publickey", help="MongoDB Atlas public API key."
@@ -125,42 +129,39 @@ def main():
     #                     help="Get the organisation associated with the "
     #                          "current API key pair [default: %(default)s]")
 
-    parser.add_argument("--pause", default=[], dest="pause_cluster",
+    parser.add_argument("-p", "--pause", default=[], dest="pause_cluster",
                         action="append",
                         help="pause named cluster in project specified by project_id "
-                             "Note that clusters that have been resumed cannot be paused"
+                             "Note that clusters that have been resumed cannot be paused "
                              "for the next 60 minutes")
 
-    parser.add_argument("--resume", default=[],
+    parser.add_argument("-r", "--resume", default=[],
                         dest="resume_cluster", action="append",
                         help="resume named cluster in project specified by project_id")
 
-    parser.add_argument("--list",
+    parser.add_argument("-l", "--list",
                         action="store_true",
                         default=False,
                         help="List everything in the organization")
 
-    parser.add_argument("--listproj",
+    parser.add_argument("-lp", "--listproj",
                         action="store_true",
                         default=False,
                         help="List all projects")
 
-    parser.add_argument("--listcluster",
+    parser.add_argument("-lc", "--listcluster",
                         action="store_true",
                         default=False,
                         help="List all clusters")
 
-    parser.add_argument('--cluster', default=[],
+    parser.add_argument("-pid", "--project_id", default=[], dest="project_id_list",
                         action="append",
-                        help="list all elements for for project_id:cluster_name")
-    parser.add_argument("--project_id", default=[], dest="project_id_list",
-                        action="append",
-                        help="specify project for cluster that is to be paused")
+                        help="specify the project ID for cluster that is to be paused")
     # parser.add_argument('--format', type=OutputFormat,
     #                     default=OutputFormat.SUMMARY, choices=list(OutputFormat),
     #                     help="The format to output data either in a single line "
     #                          "summary or a full JSON document [default: %(default)s]")
-    parser.add_argument("--debug", default=False, action="store_true",
+    parser.add_argument("-d", "--debug", default=False, action="store_true",
                         help="Turn on logging at debug level")
     # parser.add_argument("--http", type=HTTPOperationName, choices=list(HTTPOperationName),
     #                     help="do a http operation")
@@ -169,6 +170,7 @@ def main():
     #                     help="No of items to return per page [default: %(default)s]")
     # parser.add_argument("--pagenum", type=int, default=1,
     #                     help="Page to return [default: %(default)s]")
+
     args = parser.parse_args()
 
     if args.debug:
@@ -286,8 +288,9 @@ def main():
         if args.project_id_list:
             for project_id in args.project_id_list:
                 clusters = api.get_clusters(project_id)
+
                 for cluster in clusters:
-                    print(f"\nProject: '{project.id}' Cluster: '{cluster.name}'")
+                    print(f"\nProject: '{project_id}' Cluster: '{cluster.name}'")
                     print(cluster)
         else:
             for project in api.get_projects():
@@ -296,88 +299,36 @@ def main():
                     print(f"\nProject: '{project.id}' Cluster: '{cluster.name}'")
                     print(cluster)
 
+    if args.pause_cluster or args.resume_cluster:
+        if args.project_id_list:
+            for cluster_name in args.pause_cluster:
+                print(f"Pausing '{cluster_name}'")
+                cluster = api.get_one_cluster(args.project_id_list[0], cluster_name)
+                if cluster.resource['paused']:
+                    print(f"'cluster_name' is already paused, nothing to do")
+                else:
+                    result = api.pause_cluster(args.project_id_list[0], cluster_name)
+                    print(f"Paused cluster '{cluster_name}'")
+                    # pprint.pprint(result)
 
-    if args.pause_cluster:
-        for cluster_name in args.pause_cluster:
-            print(f"Pausing {cluster_name}")
-            result = api.pause_cluster(args.project_id_list[0], cluster_name)
-            pprint.pprint(result)
-
-    if args.resume_cluster:
-        for cluster_name in args.resume_cluster:
-            print(f"Resuming cluster {cluster_name}")
-            result = api.resume_cluster(args.project_id_list[0], cluster_name)
-            pprint.pprint(result)
-    # try:
-    #     r = None
-    #     if args.http:
-    #         if args.http == HTTPOperation.GET:
-    #             r = api.get(args.url)
-    #         elif args.http == HTTPOperation.POST:
-    #             if args.data:
-    #                 r = api.post(args.url, data=json.loads(args.data))
-    #         elif args.http == HTTPOperation.PATCH:
-    #             if args.data:
-    #                 r = api.post(args.url, data=json.loads(args.data))
-    #         if r is None:
-    #             print("No response")
-    #         else:
-    #             pprint.pprint(r)
-    #         # if args.httpget == "root":
-    #         #     r = api.atlas_get()
-    #         # elif args.httpget.startswith("http"):
-    #         #     r = api.get(args.httpget, page_num=args.pagenum, items_per_page=args.itemsperpage)
-    #         # else:
-    #         #     if not args.httpget.startswith("/"):
-    #         #         args.httpget = f"/{args.httpget}"
-    #         #     r=api.atlas_get(args.httpget, page_num=args.pagenum, items_per_page=args.itemsperpage)
-    #         #
-    #
-    #     else:
-    #         if args.org:
-    #             print("Organisations:")
-    #             for i in api.get_organizations():
-    #                 i.print(args.format)
-    #
-    #         if args.list and ResourceType.Project in args.list:
-    #             print("Projects:")
-    #             for project in api.get_projects():
-    #                 project.print(args.format)
-    #             #print_links(project_links, api.get_project, project_details)
-    #
-    #         if args.list and ResourceType.Cluster in args.list:
-    #             print("Clusters:")
-    #             for project in api.get_projects():
-    #                 for cluster in api.get_clusters(project.id):
-    #                     cluster.print(args.format)
-    #
-    #         if args.pause_cluster:
-    #             for i in args.pause_cluster:
-    #                 for project in api.get_projects():
-    #                     for cluster in api.get_clusters(project.id):
-    #                         if cluster.id == i :
-    #                             result = api.pause(cluster.id)
-    #                             if result is None:
-    #                                 print(f"Cluster {cluster.id} {cluster.name} was already paused")
-    #                             else:
-    #                                 print(f"Pausing {cluster.id} {cluster.name}")
-    #
-    #         if args.resume_cluster:
-    #             for i in args.resume_cluster:
-    #                 for project in api.get_projects():
-    #                     for cluster in api.get_clusters(project.id):
-    #                         if cluster.id == i:
-    #                             result = cluster.resume(cluster.id)
-    #                             if result is None:
-    #                                 print(f"Cluster {cluster.id} {cluster.name} was already running")
-    #                             else:
-    #                                 print(f"Resuming  {cluster.id} {cluster.name}")
-    #
-    # except KeyboardInterrupt:
-    #     print("Ctrl-C: Exiting...")
-    # except AtlasError as e:
-    #     print(f"AtlasError:{e}")
+            if args.resume_cluster:
+                for cluster_name in args.resume_cluster:
+                    print(f"Resuming cluster '{cluster_name}'")
+                    cluster=api.get_one_cluster(args.project_id_list[0], cluster_name)
+                    if cluster.resource['paused']:
+                        result = api.resume_cluster(args.project_id_list[0], cluster_name)
+                        print(f"Resumed cluster '{cluster_name}'")
+                    else:
+                        print(f"'cluster_name' is already resumed, nothing to do")
+                    #pprint.pprint(result)
+        else:
+            print(f"You must specify a --project_id for the cluster to be paused or resumed")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except AtlasError as e:
+        print(f"AtlasError : '{e}'")
+    except KeyboardInterrupt:
+        print("Ctrl-C...")

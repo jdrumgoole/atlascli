@@ -7,6 +7,10 @@
 ROOT=${HOME}/GIT/atlasapi
 PYTHON=python3
 
+test_cli:
+	python mongodbatlas\atlascli.py -h
+	python mongodbatlas\atlascli.py -l -lp -lc
+
 test:
 	nosetests
 
