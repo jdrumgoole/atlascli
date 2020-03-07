@@ -18,7 +18,7 @@ import json
 from enum import Enum
 
 from mongodbatlas.atlaskey import AtlasKey
-from mongodbatlas.errors import AtlasError
+from mongodbatlas.errors import AtlasError, AtlasGetError
 from mongodbatlas.opcapi import OPCAPI
 from mongodbatlas.version import __VERSION__
 
@@ -330,5 +330,7 @@ if __name__ == "__main__":
         main()
     except AtlasError as e:
         print(f"AtlasError : '{e}'")
+    except AtlasGetError as e:
+        print(f"AtlasGetError : '{e}'")
     except KeyboardInterrupt:
         print("Ctrl-C...")
