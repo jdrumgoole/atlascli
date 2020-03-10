@@ -216,8 +216,6 @@ def main():
     #         sys.exit(1)
 
     # if args.atlasop is AtlasOperationName.CREATE:
-    #     print("Not supported yet")
-    #     sys.exit(1)
     #     if args.resource is AtlasResourceName.ORGANIZATION:
     #         print('No support for organization creation at the moment use the UI')
     #     elif args.resource is AtlasResourceName.PROJECT:
@@ -234,8 +232,6 @@ def main():
     #             else:
     #                 print("You must specify a JSON data object via --data")
     # elif args.atlasop is AtlasOperationName.PATCH:
-    #     print("Not supported yet")
-    #     sys.exit(1)
     #     if args.resource is AtlasResourceName.ORGANIZATION:
     #         print("No support for modifying organizations in this release")
     #     elif args.resource is AtlasResourceName.PROJECT:
@@ -252,8 +248,6 @@ def main():
     #         else:
     #             print(f"You must specify a project id via --projectid")
     # elif args.atlasop is AtlasOperationName.DELETE:
-    #     print("Not supported yet")
-    #     sys.exit(1)
     #     if args.resource is AtlasResourceName.ORGANIZATION:
     #         print("You cannot delete organisations via atlascli at this time")
     #     elif args.resource is AtlasResourceName.PROJECT:
