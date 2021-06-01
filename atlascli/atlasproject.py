@@ -1,12 +1,12 @@
 import pprint
 
-from mongodbatlas.atlasresource import AtlasResource
+from atlascli.atlasresource import AtlasResource
 
 
 class AtlasProject(AtlasResource):
 
-    def __init__(self, project:dict=None):
-        super().__init__(project)
+    def __init__(self, api, project:dict=None):
+        super().__init__(api, project)
 
     def summary(self):
         return f"project ID:{self.id} Name:'{self.name}'"

@@ -13,8 +13,8 @@ import json
 from requests.auth import HTTPDigestAuth
 import requests
 from enum import Enum
-from mongodbatlas.atlaskey import AtlasKey
-from mongodbatlas.errors import AtlasGetError, \
+from atlascli.atlaskey import AtlasKey
+from atlascli.errors import AtlasGetError, \
                                 AtlasPatchError, \
                                 AtlasPostError, \
                                 AtlasAuthenticationError,\

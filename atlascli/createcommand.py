@@ -1,8 +1,8 @@
 from typing import Iterator
 
-from mongodbatlas import AtlasProject
-from mongodbatlas.atlascommand import AtlasCommand, CommandType, ResourceType
-from mongodbatlas.atlaskey import AtlasKey
+from atlascli import AtlasProject
+from atlascli.atlascommand import AtlasCommand, CommandType, ResourceType
+from atlascli.atlaskey import AtlasKey
 
 class CreateCommand(AtlasCommand):
 

@@ -1,6 +1,6 @@
 from enum import Enum
 import os
-from .errors import AtlasEnvironmentError
+from atlascli.errors import AtlasEnvironmentError
 
 class AtlasEnv(Enum):
 
@@ -11,23 +11,26 @@ class AtlasEnv(Enum):
     def __str__(self):
         return self.value
 
-
-
-
-
 class AtlasKey:
 
-    def __init__(self, public_key, private_key):
+    def __init__(self, public_key=None, private_key=None):
 
-        self._public_key = public_key
-        self._private_key = private_key
+        if public_key:
+            self._public_key = public_key
+        else:
+            self._public_key = AtlasKey.getenv(AtlasEnv.ATLAS_PUBLIC_KEY.value)
+        
+        if private_key:
+            self._private_key = private_key
+        else:
+            self._private_key = AtlasKey.getenv(AtlasEnv.ATLAS_PRIVATE_KEY.value)
 
 
     @staticmethod
     def getenv(key_string):
         key = os.getenv(key_string)
         if key is None:
-            raise AtlasEnvironmentError(f"Private key environment variable '{key_string}' is not set")
+            raise AtlasEnvironmentError(f"Environment variable '{key_string}' is not set")
         return key
 
     @classmethod

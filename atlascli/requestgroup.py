@@ -1,6 +1,6 @@
 import requests
 from requests.auth import HTTPDigestAuth
-from mongodbatlas.atlaskey import AtlasKey
+from atlascli.atlaskey import AtlasKey
 
 key=AtlasKey.get_from_env()
 

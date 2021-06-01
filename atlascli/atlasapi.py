@@ -11,10 +11,10 @@ more clusters.
 Author:joe@joedrumgoole.com
 """
 from functools import lru_cache
-from typing import Generator
+from typing import Generator, List, Dict
 
-from mongodbatlas.atlasrequests import AtlasRequests
-from mongodbatlas.atlaskey import AtlasKey
+from atlascli.atlasrequests import AtlasRequests
+from atlascli.atlaskey import AtlasKey
 
 
 class AtlasAPI:
@@ -26,7 +26,7 @@ class AtlasAPI:
     def api_key(self):
         return self._atlas_requests.api_key
 
-    def get_organizations(self) -> Generator[dict, None, None]:
+    def get_organization(self) -> Dict:
         """
         https://docs.atlas.mongodb.com/reference/api/organization-get-all/
         GET /orgs
@@ -37,7 +37,7 @@ class AtlasAPI:
         :return: list of AtlasOrganisations as a generator
         """
         for org in self._atlas_requests.get_resource_by_item("/orgs"):
-            yield org
+            return org
 
     def get_this_organization(self) -> dict:
         """
@@ -50,7 +50,7 @@ class AtlasAPI:
             return org
 
     @lru_cache(maxsize=500)
-    def get_one_cached_organization(self, org_id:str)->dict:
+    def get_one_cached_organization(self, org_id:str)->Dict:
         return self._atlas_requests.get(f"/orgs/{org_id}")
 
     def get_one_organization(self, org_id:str)->dict:
@@ -66,7 +66,7 @@ class AtlasAPI:
     # Project Methods
     #
 
-    def create_project(self, org_id, project_name)->dict:
+    def create_project(self, org_id, project_name)->Dict:
         """
         https://docs.atlas.mongodb.com/reference/api/project-create-one/
         POST /api/atlas/v1.0/groups
@@ -77,7 +77,7 @@ class AtlasAPI:
         """
         return self._atlas_requests.atlas_post(resource=f"/groups", data={"name": project_name, "orgId": org_id})
 
-    def delete_project(self, project_id)->dict:
+    def delete_project(self, project_id)->Dict:
         """
         https://docs.atlas.mongodb.com/reference/api/project-delete-one/
         DELETE /api/atlas/v1.0/groups/{GROUP-ID}
@@ -91,7 +91,7 @@ class AtlasAPI:
         for project in self._atlas_requests.get_resource_by_item(f"/groups"):
             yield project
 
-    def get_one_project(self, project_id)->dict:
+    def get_one_project(self, project_id)->Dict:
         """
         https://docs.atlas.mongodb.com/reference/api/project-get-one/
         GET /api/atlas/v1.0/groups/{GROUP-ID}

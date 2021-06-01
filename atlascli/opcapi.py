@@ -1,9 +1,10 @@
-from mongodbatlas.atlaskey import AtlasKey
-from mongodbatlas.atlasapi import AtlasAPI
-from mongodbatlas.atlasorganization import AtlasOrganization
-from mongodbatlas.atlascluster import AtlasCluster
-from mongodbatlas.atlasproject import AtlasProject
+from atlascli.atlaskey import AtlasKey
+from atlascli.atlasapi import AtlasAPI
+from atlascli.atlasorganization import AtlasOrganization
+from atlascli.atlascluster import AtlasCluster
+from atlascli.atlasproject import AtlasProject
 
+from typing import List
 
 class OPCAPI:
     """
@@ -46,7 +47,7 @@ class OPCAPI:
         org = self._atlas_api.get_one_project(project_id)
         return AtlasProject(org)
 
-    def get_projects(self)->[AtlasProject, None, None]:
+    def get_projects(self)->List[AtlasProject]:
         result=[]
         projects = self._atlas_api.get_projects()
         for project in projects:
@@ -60,7 +61,7 @@ class OPCAPI:
         cluster = self._atlas_api.get_one_cluster(project_id, cluster_name)
         return AtlasCluster(cluster)
 
-    def get_clusters(self, project_id) -> [AtlasCluster, None, None]:
+    def get_clusters(self, project_id) -> List[AtlasCluster]:
         result=[]
         clusters = self._atlas_api.get_clusters(project_id)
         for cluster in clusters:

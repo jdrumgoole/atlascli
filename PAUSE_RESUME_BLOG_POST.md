@@ -40,24 +40,24 @@ You could use the [Curl](https://curl.haxx.se/) program to query each resource
 using the examples in the [API docs](https://docs.atlas.mongodb.com/api) 
 but there is an easier way to do this.
 
-First you install the python package `mongodbatlas`. 
+First you install the python package `atlascli`. 
 
 ```shell script
-$ pip install mongodbatlas
-Collecting mongodbatlas
-  Using cached https://files.pythonhosted.org/packages/32/e9/27fa8872f12b7a5ecaca1c6d3234d77eef22f68c3b89e3abf1d1af36ebe9/mongodbatlas-0.2.6.tar.gz
-Collecting requests (from mongodbatlas)
+$ pip install atlascli
+Collecting atlascli
+  Using cached https://files.pythonhosted.org/packages/32/e9/27fa8872f12b7a5ecaca1c6d3234d77eef22f68c3b89e3abf1d1af36ebe9/atlascli-0.2.6.tar.gz
+Collecting requests (from atlascli)
   Using cached https://files.pythonhosted.org/packages/1a/70/1935c770cb3be6e3a8b78ced23d7e0f3b187f5cbfab4749523ed65d7c9b1/requests-2.23.0-py2.py3-none-any.whl
-Requirement already satisfied: python-dateutil in c:\users\joe\appdata\roaming\python\python37\site-packages (from mongodbatlas) (2.7.0)
-Requirement already satisfied: idna<3,>=2.5 in c:\program files (x86)\microsoft visual studio\shared\python37_64\lib\site-packages (from requests->mongodbatlas) (2.8)
-Requirement already satisfied: certifi>=2017.4.17 in c:\users\joe\appdata\roaming\python\python37\site-packages (from requests->mongodbatlas) (2019.3.9)
-Requirement already satisfied: chardet<4,>=3.0.2 in c:\program files (x86)\microsoft visual studio\shared\python37_64\lib\site-packages (from requests->mongodbatlas) (3.0.4)
-Requirement already satisfied: urllib3!=1.25.0,!=1.25.1,<1.26,>=1.21.1 in c:\program files (x86)\microsoft visual studio\shared\python37_64\lib\site-packages (from requests->mongodbatlas) (1.25.3)
-Requirement already satisfied: six>=1.5 in c:\users\joe\appdata\roaming\python\python37\site-packages (from python-dateutil->mongodbatlas) (1.12.0)
-Installing collected packages: requests, mongodbatlas
-  Running setup.py install for mongodbatlas: started
-    Running setup.py install for mongodbatlas: finished with status 'done'
-Successfully installed mongodbatlas-0.2.6 requests-2.23.0
+Requirement already satisfied: python-dateutil in c:\users\joe\appdata\roaming\python\python37\site-packages (from atlascli) (2.7.0)
+Requirement already satisfied: idna<3,>=2.5 in c:\program files (x86)\microsoft visual studio\shared\python37_64\lib\site-packages (from requests->atlascli) (2.8)
+Requirement already satisfied: certifi>=2017.4.17 in c:\users\joe\appdata\roaming\python\python37\site-packages (from requests->atlascli) (2019.3.9)
+Requirement already satisfied: chardet<4,>=3.0.2 in c:\program files (x86)\microsoft visual studio\shared\python37_64\lib\site-packages (from requests->atlascli) (3.0.4)
+Requirement already satisfied: urllib3!=1.25.0,!=1.25.1,<1.26,>=1.21.1 in c:\program files (x86)\microsoft visual studio\shared\python37_64\lib\site-packages (from requests->atlascli) (1.25.3)
+Requirement already satisfied: six>=1.5 in c:\users\joe\appdata\roaming\python\python37\site-packages (from python-dateutil->atlascli) (1.12.0)
+Installing collected packages: requests, atlascli
+  Running setup.py install for atlascli: started
+    Running setup.py install for atlascli: finished with status 'done'
+Successfully installed atlascli-0.2.6 requests-2.23.0
 $
 ```
 

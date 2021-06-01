@@ -1,21 +1,23 @@
 import unittest
 
-from mongodbatlas.atlasapi import AtlasAPI, AtlasOrganization, AtlasProject
-from mongodbatlas.errors import AtlasGetError
+from atlascli.atlasapi import AtlasAPI
+from atlascli.atlasproject import AtlasProject
+from atlascli.errors import AtlasGetError
+
+
 class MyTestCase(unittest.TestCase):
 
     def setUp(self) -> None:
         self._api = AtlasAPI()
-        self._org= self._api.get_this_organization()
 
     def test_create_delete(self):
 
         name = AtlasProject.random_name()
-        project = self._api.create_project(self._org.id, name)
-        self.assertEqual(name, project.name)
-        self._api.delete_project(project.id)
+        project = self._api.create_project(self._org["id"], name)
+        self.assertEqual(name, project["name"])
+        self._api.delete_project(project["id"])
         with self.assertRaises(AtlasGetError) as e:
-            self._api.get_one_project(project.id)
+            self._api.get_one_project(project["id"])
 
 
 if __name__ == '__main__':

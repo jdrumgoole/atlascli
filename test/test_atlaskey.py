@@ -1,8 +1,8 @@
 import unittest
 import os
 
-from mongodbatlas.atlaskey import AtlasKey, AtlasEnv
-from mongodbatlas.errors import AtlasEnvironmentError
+from atlascli.atlaskey import AtlasKey, AtlasEnv
+from atlascli.errors import AtlasEnvironmentError
 
 
 class MyTestCase(unittest.TestCase):
@@ -16,7 +16,11 @@ class MyTestCase(unittest.TestCase):
         os.environ[AtlasEnv.ATLAS_PRIVATE_KEY.value] = self._private
 
     def test_atlaskey(self):
-
+        os.environ[AtlasEnv.ATLAS_PUBLIC_KEY.value] = "Public Key"
+        os.environ[AtlasEnv.ATLAS_PRIVATE_KEY.value] = "Private Key"
+        key = AtlasKey()
+        self.assertEqual( key._private_key, "Private Key")
+        self.assertEqual( key._public_key, "Public Key")
         key = AtlasKey(private_key="AAAAAAAAAA", public_key="BBBBBBBBBBB")
         self.assertEqual(str(key), "AtlasKey(public_key='xxxxxxxBBBB', private_key='xxxxxxAAAA')")
 
@@ -33,6 +37,9 @@ class MyTestCase(unittest.TestCase):
         del os.environ[AtlasEnv.ATLAS_PRIVATE_KEY.value]
         with self.assertRaises(AtlasEnvironmentError):
             _=AtlasKey.get_from_env()
+
+        with self.assertRaises(AtlasEnvironmentError):
+            _=AtlasKey()
 
 if __name__ == '__main__':
     unittest.main()

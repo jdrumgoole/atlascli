@@ -11,13 +11,13 @@ from setuptools import find_packages, setup
 
 
 # Package meta-data.
-NAME = 'mongodbatlas'
-DESCRIPTION = 'Python API to the MongoDB Atlas REST Interface'
-URL = 'https://github.com/jdrumgoole/MongoDB-Atlas-API'
+NAME = 'atlascli'
+DESCRIPTION = 'Simple cli to pause and resume Atlas Clusters'
+URL = 'https://github.com/jdrumgoole/atlascli'
 EMAIL = 'joe@joedrumgoole.com'
 AUTHOR = 'Joe Drumgoole'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = "0.2.6"
+VERSION = "0.2.7"
 
 
 # What packages are optional?
@@ -71,7 +71,7 @@ setup(
     # $ setup.py publish support.
     entry_points={
         'console_scripts': [
-            'atlascli=mongodbatlas.atlascli:main',
+            'atlascli=atlascli.main:main',
         ]},
     test_suite='nose.collector',
 )

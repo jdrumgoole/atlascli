@@ -3,10 +3,10 @@ import pprint
 import random
 import string
 
-from mongodbatlas.atlascluster import AtlasCluster
-from mongodbatlas.atlasresource import AtlasResource
-from mongodbatlas.atlasrequests import AtlasRequests
-from mongodbatlas.atlasapi import AtlasAPI
+from atlascli.atlascluster import AtlasCluster
+from atlascli.atlasresource import AtlasResource
+from atlascli.atlasrequests import AtlasRequests
+from atlascli.atlasapi import AtlasAPI
 
 
 class MyTestCase(unittest.TestCase):
@@ -14,18 +14,18 @@ class MyTestCase(unittest.TestCase):
     def setUp(self):
         self._api = AtlasAPI()
 
-    def test_atlasresource(self):
-        mixin = AtlasRequests()
-        res = AtlasResource()
-        cluster = AtlasCluster()
+    def test_get_clusters(self):
+        clusters = list(self._api.get_clusters("5a141a774e65811a132a8010")) #Open Data Project
+        self.assertTrue(len(clusters) > 0)
+
+    def test_atlascluster(self):
+        cluster = AtlasCluster(self._api, "5a141a774e65811a132a8010", AtlasCluster.default_single_region_cluster())
 
     def test_create_delete(self):
         cluster_dict = AtlasCluster.default_single_region_cluster()
         cluster_dict["name"] =AtlasCluster.random_name()
-        cluster = AtlasCluster(cluster_dict)
-        self.assertEqual(cluster.name, cluster_dict["name"])
-        created_cluster= self._api.create_cluster("5a141a774e65811a132a8010", cluster.resource)
-        self._api.delete_cluster("5a141a774e65811a132a8010", cluster.name)
+        created_cluster= self._api.create_cluster("5a141a774e65811a132a8010", cluster_dict)
+        self._api.delete_cluster("5a141a774e65811a132a8010", created_cluster["name"])
 
     def test_modify(self):
         bi_on = {'biConnector': {'enabled': True, 'readPreference': 'secondary'}}
@@ -36,7 +36,8 @@ class MyTestCase(unittest.TestCase):
         cluster = self._api.get_one_cluster(project_id="5a141a774e65811a132a8010",
                                             cluster_name="demodata")
 
-        self.assertTrue( cluster.resource['biConnector']["enabled"])
+        #pprint.pprint(cluster)
+        self.assertTrue( cluster['biConnector']["enabled"])
         bi_off = {'biConnector': {'enabled': False, 'readPreference': 'secondary'}}
         self._api.modify_cluster(project_id="5a141a774e65811a132a8010",
                                  cluster_name="demodata",
@@ -44,7 +45,7 @@ class MyTestCase(unittest.TestCase):
         cluster = self._api.get_one_cluster(project_id="5a141a774e65811a132a8010",
                                             cluster_name="demodata")
 
-        self.assertFalse( cluster.resource['biConnector']["enabled"])
+        self.assertFalse( cluster['biConnector']["enabled"])
 
 if __name__ == '__main__':
     unittest.main()

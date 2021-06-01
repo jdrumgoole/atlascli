@@ -1,11 +1,10 @@
 from typing import Iterator
 
 from enum import Enum
-from mongodbatlas.api import API
-from mongodbatlas.atlaskey import AtlasKey
-from mongodbatlas.atlasproject import AtlasProject
-from mongodbatlas.atlascluster import AtlasCluster
-from mongodbatlas.atlasorganization import AtlasOrganization
+from atlascli.atlaskey import AtlasKey
+from atlascli.atlasproject import AtlasProject
+from atlascli.atlascluster import AtlasCluster
+from atlascli.atlasorganization import AtlasOrganization
 
 
 class CommandType(Enum):

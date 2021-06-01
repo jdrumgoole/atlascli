@@ -5,17 +5,17 @@ a complete and well documented [REST API](https://docs.atlas.mongodb.com/api/).
 
 ## Installation
 
-The easiest way to install the `mongodbatlas` is with `pip`.
+The easiest way to install the `atlascli` is with `pip`.
 
 ```shell
-C:\Users\joe>pip install mongodbatlas
+C:\Users\joe>pip install atlascli
 Looking in indexes: https://test.pypi.org/simple/
-Processing c:\users\joe\appdata\local\pip\cache\wheels\6c\2f\e8\7f33b6b37b40424f1d00d54048aaa63fd47c7b289e790a997d\mongodbatlas-0.2.5b5-py3-none-any.whl
-Requirement already satisfied: python-dateutil in c:\users\joe\.virtualenvs\joe-93pxapbd\lib\site-packages (from mongodbatlas) (2.8.1)
-Requirement already satisfied: requests in c:\users\joe\.virtualenvs\joe-93pxapbd\lib\site-packages (from mongodbatlas) (2.5.4.1)
-Requirement already satisfied: six>=1.5 in c:\users\joe\.virtualenvs\joe-93pxapbd\lib\site-packages (from python-dateutil->mongodbatlas) (1.10.0)
-Installing collected packages: mongodbatlas
-Successfully installed mongodbatlas-0.2.5b
+Processing c:\users\joe\appdata\local\pip\cache\wheels\6c\2f\e8\7f33b6b37b40424f1d00d54048aaa63fd47c7b289e790a997d\atlascli-0.2.5b5-py3-none-any.whl
+Requirement already satisfied: python-dateutil in c:\users\joe\.virtualenvs\joe-93pxapbd\lib\site-packages (from atlascli) (2.8.1)
+Requirement already satisfied: requests in c:\users\joe\.virtualenvs\joe-93pxapbd\lib\site-packages (from atlascli) (2.5.4.1)
+Requirement already satisfied: six>=1.5 in c:\users\joe\.virtualenvs\joe-93pxapbd\lib\site-packages (from python-dateutil->atlascli) (1.10.0)
+Installing collected packages: atlascli
+Successfully installed atlascli-0.2.5b
 
 C:\Users\joe>
 ```

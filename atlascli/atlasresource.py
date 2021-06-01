@@ -5,7 +5,8 @@ import json
 from datetime import datetime
 from dateutil import parser
 
-from mongodbatlas.outputformat import OutputFormat
+from atlascli.outputformat import OutputFormat
+from atlascli.atlasapi import AtlasAPI
 
 def json_datetime_encoder(item:datetime):
     return str(item)
@@ -16,7 +17,7 @@ class AtlasResource:
     Base class for Atlas Resources
     """
 
-    def __init__(self, resource:dict=None):
+    def __init__(self, api:AtlasAPI=None, resource:dict=None):
         if resource:
             self._resource = resource
             if "created" in self._resource:  # convert date string to datetime obj
@@ -24,6 +25,14 @@ class AtlasResource:
         else:
             self._resource = {}
 
+        if api:
+            self._api = api
+        else:
+            self._api = AtlasAPI()
+
+    @property
+    def api(self):
+        return self._api
     @property
     def timestamp(self):
         return self._timestamp
@@ -72,7 +81,7 @@ class AtlasResource:
 
     @staticmethod
     def random_name():
-        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+        return "ATLASCLI-"+''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
 
     def __str__(self):
         return f"{pprint.pformat(self._resource)}"
