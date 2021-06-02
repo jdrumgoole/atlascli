@@ -89,7 +89,8 @@ class AtlasRequests:
             r.raise_for_status()
 
         except requests.exceptions.HTTPError as e:
-            raise AtlasPostError(e, r.json()["detail"])
+            error = pprint.pformat(r.json())
+            raise AtlasPostError(error)
         return r.json()
 
     def get(self, resource, headers=None, page_num=1, items_per_page=100):
@@ -116,7 +117,8 @@ class AtlasRequests:
                              auth=self._auth)
             r.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            raise AtlasGetError(e, r.json()["detail"])
+            error = pprint.pformat(r.json())
+            raise AtlasGetError(error)
         return r.json()
 
     def atlas_post(self, resource, data):
@@ -144,7 +146,8 @@ class AtlasRequests:
                                )
             p.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            raise AtlasPatchError(e, p.json())
+            error = pprint.pformat(p.json())
+            raise AtlasPatchError(error)
         return p.json()
 
     def delete(self, resource):

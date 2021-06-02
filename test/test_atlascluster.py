@@ -7,12 +7,15 @@ from atlascli.atlascluster import AtlasCluster
 from atlascli.atlasresource import AtlasResource
 from atlascli.atlasrequests import AtlasRequests
 from atlascli.atlasapi import AtlasAPI
-
+from atlascli.atlasorganization import AtlasOrganization
 
 class MyTestCase(unittest.TestCase):
 
-    def setUp(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._org = AtlasOrganization()
         self._api = AtlasAPI()
+
 
     def test_get_clusters(self):
         clusters = list(self._api.get_clusters("5a141a774e65811a132a8010")) #Open Data Project
@@ -46,6 +49,10 @@ class MyTestCase(unittest.TestCase):
                                             cluster_name="demodata")
 
         self.assertFalse( cluster['biConnector']["enabled"])
+
+    def test_getcluster(self):
+        clusters = self._org.get_cluster("GDELT")
+        self.assertEqual( len(clusters), 1)
 
 if __name__ == '__main__':
     unittest.main()

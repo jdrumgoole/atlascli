@@ -107,7 +107,7 @@ not leak into screen shots and log files. For the examples that follow we
 assume these environment variables have been set correctly.*
 
 To list all the projects and clusters for the organization associated with
-your API key just run `atlascli -list`.*
+your API key just run `atlascli -list`.
 
 ```shell script
 $ atlascli --list
@@ -140,7 +140,8 @@ You can pause and resume an Atlas cluster using the Atlas GUI.
 ![Pause a Cluster in MongoDB Atlas](https://webassets.mongodb.com/_com_assets/cms/pause_cluster-y1wtdyybzn.png)
 
 However, when we pause a cluster the Atlas environment will restart the cluster 
-after seven days. Also, both pausing and resuming require a login, 
+after 30 days. This is required to ensure every cluster can be maintained in a supported 
+configuration. Also, both pausing and resuming require a login, 
 navigation etc. Basically, it’s a drag to do this regularly. 
 
 As long as cluster is running you are paying full price for it. When a cluster
@@ -150,7 +151,8 @@ development or test clusters this can amount to a lot of savings, especially if
 you factor in pausing them for the whole of the weekend. 
 
 To facilitate this activity the `atlascli` script explicitly supports `--pause` 
-and `--resume` parameters. 
+and `--resume` parameters. Not that the API will only allow `pause` and `resume` commands
+on M10 clusters or larger. 
 
 ```shell script
 $ atlascli --list

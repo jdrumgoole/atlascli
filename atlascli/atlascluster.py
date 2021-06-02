@@ -1,5 +1,8 @@
 import pprint
 from typing import Dict
+
+from colorama import Fore, Style
+
 from atlascli.atlasresource import AtlasResource
 from atlascli.atlasapi import AtlasAPI
 
@@ -33,6 +36,10 @@ class AtlasCluster(AtlasResource):
 
     @property
     def cluster_id(self):
+        return self.id
+
+    @property
+    def project_id(self):
         return self._project_id
         
     def is_paused(self):
@@ -50,4 +57,12 @@ class AtlasCluster(AtlasResource):
     def __str__(self):
         return f"{pprint.pformat(self.resource)}"
 
+    def summary(self):
+        if self.is_paused():
+            status_label = "paused"
+        else:
+            status_label = Style.BRIGHT + Fore.RED + "running"
+            
+        cluster_name = "'" + self.name + "'"
+        return f"{Fore.MAGENTA}cluster ID{Fore.RESET}: {self.id:10} {Fore.MAGENTA}name{Fore.RESET}: {Fore.GREEN}{cluster_name:20}{Fore.RESET} {Fore.MAGENTA}status{Fore.RESET}: {status_label}"
 

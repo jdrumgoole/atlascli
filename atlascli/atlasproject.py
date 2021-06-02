@@ -1,5 +1,6 @@
 import pprint
 
+from colorama import Fore
 from atlascli.atlasresource import AtlasResource
 
 
@@ -9,7 +10,7 @@ class AtlasProject(AtlasResource):
         super().__init__(api, project)
 
     def summary(self):
-        return f"project ID:{self.id} Name:'{self.name}'"
+        return f"{Fore.MAGENTA}project ID{Fore.RESET}: {self.id} {Fore.MAGENTA}Name{Fore.RESET}: {Fore.YELLOW}'{self.name}'"
 
     def __str__(self):
         return f"{pprint.pformat(self._resource)}"

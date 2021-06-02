@@ -4,14 +4,15 @@ from requests.exceptions import HTTPError
 
 
 class AtlasError(HTTPError):
-    def __init__(self, *args, **kwargs):
-        self._text = kwargs.pop("text", None)
+    pass
+    # def __init__(self, *args, **kwargs):
+    #     self._text = kwargs.pop("text", None)
 
-        super().__init__(*args, **kwargs)
+    #     super().__init__(*args, **kwargs)
 
-    @property
-    def text(self):
-        return self._text
+    # @property
+    # def text(self):
+    #     return self._text
 
 class AtlasAuthenticationError(AtlasError):
     pass

@@ -7,6 +7,10 @@ from dateutil import parser
 
 from atlascli.outputformat import OutputFormat
 from atlascli.atlasapi import AtlasAPI
+from pygments import highlight
+from pygments.styles import default, colorful, emacs, get_style_by_name
+from pygments.lexers import JsonLexer
+from pygments.formatters import Terminal256Formatter
 
 def json_datetime_encoder(item:datetime):
     return str(item)
@@ -74,6 +78,8 @@ class AtlasResource:
         elif fmt is OutputFormat.JSON:
             print(json.dumps(self._resource, indent=2, default=json_datetime_encoder))
 
+    def pretty(self)->str:
+        return highlight(json.dumps(self._resource, indent=2, default=json_datetime_encoder), JsonLexer(), Terminal256Formatter(style=get_style_by_name('emacs')))
 
     # def __call__(self):
     #     return self._resource

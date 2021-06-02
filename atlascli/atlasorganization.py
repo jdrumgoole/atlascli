@@ -1,6 +1,7 @@
 
-from typing import List, Dict
-from collections import Counter
+from typing import List, Dict, Generator
+
+from colorama import Fore
 
 from atlascli.atlasapi import AtlasAPI
 from atlascli.atlasproject import AtlasProject
@@ -51,7 +52,10 @@ class AtlasOrganization(AtlasResource):
 
 
     def summary(self)->str:
-        return f"Organization ID:{self.id} Name:'{self.name}'"
+        return f"{Fore.MAGENTA}Organization ID{Fore.RESET}: {self.id} {Fore.MAGENTA}Name{Fore.RESET}: {Fore.LIGHTYELLOW_EX}'{self.name}'"
+
+    def is_project_id(self, id:str)->bool:
+        return id in self._projects
 
     def is_cluster_name(self, cluster_name:str)->bool:
         #print(f"is_cluster_name({cluster_name})")
@@ -78,7 +82,7 @@ class AtlasOrganization(AtlasResource):
     #     return f"id:{self.id} name:'{self.name}'"
 
     def get_projects(self)->Dict[str, AtlasProject]:
-        return self._projects
+        return list(self._projects.values())
 
     def get_project_id(self, project_name:str):
         for i in self._projects.values():
@@ -107,15 +111,20 @@ class AtlasOrganization(AtlasResource):
                     clusters.append(i)
         return clusters
  
-    def get_clusters(self)->List[AtlasCluster]:
-        return self._clusters
+    def get_clusters(self, project_id:str=None)->Generator[AtlasCluster, None, None]:
+        for c in self._clusters:
+            if project_id is None:
+                yield c
+            elif project_id == c.project_id:
+                yield c
+
 
     def pause_cluster(self, project_id:str, cluster_name:str):
         clusters = self.get_clusters()
 
     def pprint(self):
         print(self.summary())
-        for project in self._projects:
+        for project in self._projects.values():
             print(f"   {project.summary()}")
             for cluster in self._project_cluster_map[project.id]:
                 print(f"     {cluster.summary()}")

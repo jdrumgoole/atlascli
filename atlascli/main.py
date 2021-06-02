@@ -14,9 +14,14 @@ import os
 import pprint
 import sys
 import logging
-import json
+
 from enum import Enum
 from typing import List
+from datetime import datetime
+import json
+from typing import Dict
+
+from colorama import init, Fore
 
 from atlascli.atlaskey import AtlasKey
 from atlascli.errors import AtlasError, AtlasGetError
@@ -24,11 +29,12 @@ from atlascli.atlasapi import AtlasAPI
 from atlascli.version import __VERSION__
 from atlascli.atlasorganization import AtlasOrganization
 from atlascli.atlascluster import AtlasCluster
+
 class ParseError(ValueError):
     pass
 
 
-def parse_id(s, sep=":"):
+def parse_id(s:str, sep:str=":")->tuple:
     """
 
     :param s: A sting of the form <id1>:<id2> used to specify an ID tuple
@@ -91,36 +97,29 @@ def pause_cluster(c:AtlasCluster):
     if c.is_paused():
         print(f"Cluster '{c.name}' is already paused")
     else:
-        print(f"Pausing '{c.name}'")
+        print(f"Trying to pause: '{c.name}'")
         c.pause()
-        print(f"Paused cluster '{c.name}'")
+
+        print(f"Paused cluster '{c.name}' at {datetime.now().strftime('%H:%M:%S')}")
 
 def resume_cluster(c:AtlasCluster):
     if c.is_paused():
         print(f"Resuming '{c.name}'")
         c.resume()
-        print(f"Resumed cluster '{c.name}'")
+        print(f"Resumed cluster '{c.name}' at {datetime.now().strftime('%H:%M:%S')} ")
     else:
-        print(f"Cluster '{c.name}' is already running")   
-    print(f"Pausing '{cluster_name}'")
-    cluster = api.get_one_cluster(project_id, cluster_name)
-    if cluster['paused']:
-        result = api.resume(project_id, cluster_name)
-        print(f"Resumed cluster '{cluster_name}'")
-
-    else:
-        print(f"'{cluster_name}' is already running, nothing to do")
+        print(f"'{c.name}' is already running, nothing to do")
 
 def pause_command(org:AtlasOrganization, arg_project_ids:List[str], arg_cluster_names:List[str]):
     for cluster_name in arg_cluster_names:
         clusters = org.get_cluster(cluster_name)
         if len(clusters) == 0:
             print(f"No such cluster '{cluster_name}'")
-        elif len(clusters == 1):
-            clusters[0].pause()
+        elif len(clusters) == 1:
+            pause_cluster(clusters[0])
         elif len(arg_project_ids) == 1 :
             clusters = org.get_cluster(cluster_name, arg_project_ids[0])
-            clusters[0].pause()
+            pause_cluster(clusters[0])
         elif len(arg_project_ids) < 1 :
             print("You must specify only one project ID when pausing multiple clusters")
             print("You specified none (use the --project_id argument)")
@@ -135,11 +134,11 @@ def resume_command(org:AtlasOrganization, arg_project_ids:List[str], arg_cluster
         clusters = org.get_cluster(cluster_name)
         if len(clusters) == 0:
             print(f"No such cluster '{cluster_name}'")
-        elif len(clusters == 1):
-            clusters[0].resume()
+        elif len(clusters) == 1:
+            resume_cluster(clusters[0])
         elif len(arg_project_ids) == 1 :
             clusters = org.get_cluster(cluster_name, arg_project_ids[0])
-            clusters[0].resume()
+            resume_cluster(clusters[0])
         elif len(arg_project_ids) < 1 :
             print("You must specify only one project ID when resuming multiple clusters")
             print("You specified none (use the --project_id argument)")
@@ -160,35 +159,6 @@ def main():
                                             "Can be read from the environment variable ATLAS_PUBLIC_KEY")
     parser.add_argument("--privatekey", help="MongoDB Atlas private API key."
                                              "Can be read from the environment variable ATLAS_PRIVATE_KEY")
-
-    # parser.add_argument("--atlasop",
-    #                     type=AtlasOperationName,
-    #                     default=None,
-    #                     choices=list(AtlasOperationName),
-    #                     help="Which Atlas operation do you want to run create, modify, delete, list, pause, resume"
-    #                     )
-    #
-    # parser.add_argument("--resource",
-    #                     type=AtlasResourceName, default=None,
-    #                     choices=list(AtlasResourceName),
-    #                     help="Which resource type are we operating on:"
-    #                          "organization, project or cluster?")
-
-    # parser.add_argument("--data",
-    #                     help="Arguments for create and modify arguments (Python dict)")
-
-    # parser.add_argument("--orgid",
-    #                     help="ID for an AtlasOrganization")
-
-    # parser.add_argument("--projectname",
-    #                     help="Project name for an AtlasProject")
-    #
-    # parser.add_argument("--clustername",
-    #                     help="name  for an AltasCluster")
-
-    # parser.add_argument("--org", action="store_true", default=False,
-    #                     help="Get the organisation associated with the "
-    #                          "current API key pair [default: %(default)s]")
 
     parser.add_argument("-p", "--pause", default=[], dest="pause_cluster",
                         action="append",
@@ -232,6 +202,13 @@ def main():
     # parser.add_argument("--pagenum", type=int, default=1,
     #                     help="Page to return [default: %(default)s]")
 
+    # Initializes Colorama
+    init(autoreset=True)
+
+    if len(sys.argv)==1:
+        parser.print_help(sys.stderr)
+        sys.exit(0)
+
     args = parser.parse_args()
 
     if args.debug:
@@ -263,96 +240,32 @@ def main():
                   "arg or the environment variable ATLAS_PRIVATE_KEY")
             sys.exit(1)
 
-    api = AtlasAPI(AtlasKey(public_key, private_key))
-    org = AtlasOrganization(api)
-
-    # data = None
-    # if args.data:
-    #     try:
-    #         data = json.loads(args.data)
-    #     except json.JSONDecodeError as e:
-    #         print("Error decoding:")
-    #         print(f"{args.data}")
-    #         print(f"error:{e}")
-    #         sys.exit(1)
-
-    # if args.atlasop is AtlasOperationName.CREATE:
-    #     if args.resource is AtlasResourceName.ORGANIZATION:
-    #         print('No support for organization creation at the moment use the UI')
-    #     elif args.resource is AtlasResourceName.PROJECT:
-    #         if args.projectname:
-    #             project = api.create_project(org.id, args.projectname)
-    #             project.print_resource(args.format)
-    #         else:
-    #             print("You must specify a project name via --projectname")
-    #     else:  # Cluster
-    #         if args.projectid:
-    #             if data:
-    #                 cluster = api.create_cluster(args.project_id, args.data)
-    #                 cluster.print_resource(args.format)
-    #             else:
-    #                 print("You must specify a JSON data object via --data")
-    # elif args.atlasop is AtlasOperationName.PATCH:
-    #     if args.resource is AtlasResourceName.ORGANIZATION:
-    #         print("No support for modifying organizations in this release")
-    #     elif args.resource is AtlasResourceName.PROJECT:
-    #         print("There is no modify capability for projects in MongoDB Atlas")
-    #     else:  # Cluster
-    #         if args.projectid:
-    #             if args.clustername:
-    #                 cluster = api.modify_cluster(args.projectid,
-    #                                              args.clustername,
-    #                                              args.data)
-    #                 cluster.print_resource(args.format)
-    #             else:
-    #                 print(f"You must specify a cluster name via --clustername")
-    #         else:
-    #             print(f"You must specify a project id via --projectid")
-    # elif args.atlasop is AtlasOperationName.DELETE:
-    #     if args.resource is AtlasResourceName.ORGANIZATION:
-    #         print("You cannot delete organisations via atlascli at this time")
-    #     elif args.resource is AtlasResourceName.PROJECT:
-    #         if args.projectid:
-    #             project = api.get_one_project(args.projectid)
-    #             api.delete_project(args.projectid)
-    #             print(f"Deleted project: {project.summary_string()}")
-    #     elif args.resource is AtlasResourceName.CLUSTER:
-    #         if args.projectid:
-    #             if args.clustername:
-    #                 cluster = api.get_one_cluster(args.project_id[0], args.clustername)
-    #                 api.delete_cluster(args.projectid, args.clustername)
-    #                 print(f"Deleted cluster: {cluster.summary_string()}")
-    #             else:
-    #                 print("You must specify a a cluster name via --clustername")
-    #         else:
-    #             print("You must specify a project id via --projectid")
-
-        
+    org = AtlasOrganization(public_key, private_key) 
     if args.list:
-        #print(org)
         org.pprint()
-    if args.listproj :
+    if args.listproj:
         if args.project_id_list:
             for project_id in args.project_id_list:
-                print(api.get_one_project(project_id))
+                print(org.get_one_project(project_id).pretty())
         else:
-            for project in api.get_projects():
+            for project in org.get_projects():
                 print(f"\nProject: '{project.name}'")
-                print(project)
+                print(project.pretty())
     if args.listcluster:
         if args.project_id_list:
             for project_id in args.project_id_list:
-                clusters = api.get_clusters(project_id)
-
-                for cluster in clusters:
-                    print(f"\nProject: '{project_id}' Cluster: '{cluster.name}'")
-                    print(cluster)
+                if org.is_project_id(project_id):
+                    for cluster in org.get_clusters(project_id):
+                        print(f"\nProject: '{project_id}' Cluster: '{cluster.name}'")
+                        print(cluster.pretty())
+                else:
+                    print(f"{project_id} is not a valid project ID")
         else:
-            for project in api.get_projects():
-                clusters = api.get_clusters(project.id)
+            for project in org.get_projects():
+                clusters = org.get_clusters(project.id)
                 for cluster in clusters:
                     print(f"\nProject: '{project.id}' Cluster: '{cluster.name}'")
-                    print(cluster)
+                    print(cluster.pretty())
 
     if args.pause_cluster or args.resume_cluster:
         if args.pause_cluster:
@@ -364,8 +277,13 @@ if __name__ == "__main__":
     try:
         main()
     except AtlasError as e:
-        print(f"AtlasError : '{e}'")
+        print(f"{Fore.RED}AtlasError:")
+        print(e)
+        sys.exit(1)
     except AtlasGetError as e:
-        print(f"AtlasGetError : '{e}'")
+        print(f"{Fore.RED}AtlasGetError:")
+        print(e)
+        sys.exit(1)
     except KeyboardInterrupt:
-        print("Ctrl-C...")
+        print(f"{Fore.RED}Ctrl-C...exiting")
+        sys.exit(1)
