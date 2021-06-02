@@ -5,7 +5,7 @@ import pprint
 from atlascli.atlasorganization import AtlasOrganization
 
 
-class TestOprganization(unittest.TestCase):
+class TestOrganization(unittest.TestCase):
    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

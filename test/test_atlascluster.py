@@ -4,12 +4,11 @@ import random
 import string
 
 from atlascli.atlascluster import AtlasCluster
-from atlascli.atlasresource import AtlasResource
-from atlascli.atlasrequests import AtlasRequests
 from atlascli.atlasapi import AtlasAPI
 from atlascli.atlasorganization import AtlasOrganization
 
-class MyTestCase(unittest.TestCase):
+
+class TestAtlasCluster(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -26,7 +25,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_create_delete(self):
         cluster_dict = AtlasCluster.default_single_region_cluster()
-        cluster_dict["name"] =AtlasCluster.random_name()
+        cluster_dict["name"] = AtlasAPI.random_name()
         created_cluster= self._api.create_cluster("5a141a774e65811a132a8010", cluster_dict)
         self._api.delete_cluster("5a141a774e65811a132a8010", created_cluster["name"])
 

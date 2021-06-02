@@ -6,7 +6,7 @@ from atlascli import AtlasCluster, AtlasOrganization
 from atlascli.atlasapi import AtlasAPI
 from atlascli.errors import AtlasGetError
 
-class MyTestCase(unittest.TestCase):
+class TestAPI(unittest.TestCase):
 
     def setUp(self) -> None:
         self._api = AtlasAPI()

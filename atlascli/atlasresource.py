@@ -4,6 +4,7 @@ import string
 import json
 from datetime import datetime
 from dateutil import parser
+from typing import Dict
 
 from atlascli.outputformat import OutputFormat
 from atlascli.atlasapi import AtlasAPI
@@ -21,7 +22,7 @@ class AtlasResource:
     Base class for Atlas Resources
     """
 
-    def __init__(self, api:AtlasAPI=None, resource:dict=None):
+    def __init__(self, api:AtlasAPI=None, resource:Dict=None):
         if resource:
             self._resource = resource
             if "created" in self._resource:  # convert date string to datetime obj
@@ -78,16 +79,18 @@ class AtlasResource:
         elif fmt is OutputFormat.JSON:
             print(json.dumps(self._resource, indent=2, default=json_datetime_encoder))
 
+    @classmethod
+    def pretty_dict(cls, d:Dict)->str:
+        return highlight(json.dumps(d, indent=2, default=json_datetime_encoder), JsonLexer(), Terminal256Formatter(style=get_style_by_name('emacs')))
+
     def pretty(self)->str:
-        return highlight(json.dumps(self._resource, indent=2, default=json_datetime_encoder), JsonLexer(), Terminal256Formatter(style=get_style_by_name('emacs')))
+        return AtlasResource.pretty_dict(self._resource)
 
     # def __call__(self):
     #     return self._resource
 
 
-    @staticmethod
-    def random_name():
-        return "ATLASCLI-"+''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+
 
     def __str__(self):
         return f"{pprint.pformat(self._resource)}"

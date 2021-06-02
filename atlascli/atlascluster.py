@@ -34,6 +34,9 @@ class AtlasCluster(AtlasResource):
         cluster = api.get_one_cluster(project_id, cluster_name)
         o = cls(api, project_id, cluster)
 
+    @classmethod
+    def create_cluster(cls, project_id:str, cluster_config:Dict):
+        return self.api.create_cluster(project_id, cluster_config)
     @property
     def cluster_id(self):
         return self.id
@@ -41,7 +44,7 @@ class AtlasCluster(AtlasResource):
     @property
     def project_id(self):
         return self._project_id
-        
+
     def is_paused(self):
         return self.resource["paused"]
 

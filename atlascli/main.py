@@ -166,6 +166,9 @@ def main():
                              "Note that clusters that have been resumed cannot be paused "
                              "for the next 60 minutes")
 
+    parser.add_argument("--defaultcluster", default=False, action="store_true",
+                        help="Print out the default cluster we use to create clusters with the create command")
+
     parser.add_argument("-r", "--resume", default=[],
                         dest="resume_cluster", action="append",
                         help="resume named cluster in project specified by project_id")
@@ -243,14 +246,18 @@ def main():
     org = AtlasOrganization(public_key, private_key) 
     if args.list:
         org.pprint()
+
     if args.listproj:
         if args.project_id_list:
             for project_id in args.project_id_list:
                 print(org.get_one_project(project_id).pretty())
         else:
             for project in org.get_projects():
-                print(f"\nProject: '{project.name}'")
                 print(project.pretty())
+
+    if args.defaultcluster:
+        print(AtlasCluster.pretty_dict(AtlasCluster.default_single_region_cluster()))
+       
     if args.listcluster:
         if args.project_id_list:
             for project_id in args.project_id_list:
