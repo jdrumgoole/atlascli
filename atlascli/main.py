@@ -257,7 +257,7 @@ def main():
 
     if args.defaultcluster:
         print(AtlasCluster.pretty_dict(AtlasCluster.default_single_region_cluster()))
-       
+
     if args.listcluster:
         if args.project_id_list:
             for project_id in args.project_id_list:

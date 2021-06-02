@@ -1,18 +1,13 @@
 import unittest
 import pprint
 
-from atlascli.atlasrequests import AtlasRequests
-from atlascli.atlaskey import AtlasKey
-from atlascli import AtlasProject
+from atlascli.atlasapi import AtlasAPI
 
-import requests
 
-class Test_APIMixin(unittest.TestCase):
-
+class TestAPIMixin(unittest.TestCase):
 
     def setUp(self):
-        key = AtlasKey.get_from_env()
-        self._api=AtlasRequests(api_key=key)
+        self._api=AtlasAPI()
 
     def tearDown(self):
         pass
