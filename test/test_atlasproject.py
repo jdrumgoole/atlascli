@@ -13,7 +13,7 @@ class MyTestCase(unittest.TestCase):
     def test_create_delete(self):
 
         name = AtlasProject.random_name()
-        project = self._api.create_project(self._org["id"], name)
+        project = self._api.create_project("599eeced9f78f769464d175c", name)
         self.assertEqual(name, project["name"])
         self._api.delete_project(project["id"])
         with self.assertRaises(AtlasGetError) as e:
