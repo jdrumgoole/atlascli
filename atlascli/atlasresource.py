@@ -13,7 +13,8 @@ from pygments.styles import default, colorful, emacs, get_style_by_name
 from pygments.lexers import JsonLexer
 from pygments.formatters import Terminal256Formatter
 
-def json_datetime_encoder(item:datetime):
+
+def json_datetime_encoder(item: datetime):
     return str(item)
 
 
@@ -80,12 +81,21 @@ class AtlasResource:
             print(json.dumps(self._resource, indent=2, default=json_datetime_encoder))
 
     @classmethod
-    def pretty_dict(cls, d:Dict)->str:
+    def pretty_dict(cls, d: Dict) -> str:
         return highlight(json.dumps(d, indent=2, default=json_datetime_encoder), JsonLexer(), Terminal256Formatter(style=get_style_by_name('emacs')))
 
     def pretty(self)->str:
         return AtlasResource.pretty_dict(self._resource)
 
+    @staticmethod
+    def dump(output_filename: str, d: Dict):
+        with open(output_filename, "w") as output_file:
+            output_file.write(json.dumps(d, indent=2))
+
+    @staticmethod
+    def load(input_filename: str):
+        with open(input_filename, "r") as input_file:
+            return json.load(input_file)
     # def __call__(self):
     #     return self._resource
 

@@ -1,5 +1,6 @@
 import logging
 from logging import NullHandler
+logging.getLogger(__name__).addHandler(NullHandler())
 
 from .atlasorganization import AtlasOrganization
 from .atlasproject import AtlasProject

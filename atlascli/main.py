@@ -188,6 +188,9 @@ def main():
                         default=False,
                         help="List all clusters")
 
+    parser.add_argument("-o", "--output", default=None,
+                        help="Specify a file for output")
+
     parser.add_argument("-pid", "--project_id", default=[], dest="project_id_list",
                         action="append",
                         help="specify the project ID for cluster that is to be paused")
@@ -244,6 +247,7 @@ def main():
             sys.exit(1)
 
     org = AtlasOrganization(public_key, private_key) 
+
     if args.list:
         org.pprint()
 
@@ -256,7 +260,12 @@ def main():
                 print(project.pretty())
 
     if args.defaultcluster:
-        print(AtlasCluster.pretty_dict(AtlasCluster.default_single_region_cluster()))
+        default_cluster = AtlasCluster.default_single_region_cluster()
+        if args.output:
+            with open(args.output, "w") as output_file:
+                output_file.write(json.dumps(default_cluster))
+        else:
+            print(AtlasCluster.pretty_dict(default_cluster))
 
     if args.listcluster:
         if args.project_id_list:

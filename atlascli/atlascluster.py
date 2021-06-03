@@ -1,3 +1,4 @@
+import json
 import pprint
 from typing import Dict
 
@@ -37,6 +38,7 @@ class AtlasCluster(AtlasResource):
     @classmethod
     def create_cluster(cls, project_id:str, cluster_config:Dict):
         return self.api.create_cluster(project_id, cluster_config)
+
     @property
     def cluster_id(self):
         return self.id
@@ -52,10 +54,11 @@ class AtlasCluster(AtlasResource):
         self.resource = self._api.pause(self._project_id, self.name)
         return self.resource
 
-
     def resume(self):
         self.resource = self._api.resume(self._project_id, self.name)
         return self.resource
+
+
 
     def __str__(self):
         return f"{pprint.pformat(self.resource)}"

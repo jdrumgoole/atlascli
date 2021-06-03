@@ -1,3 +1,4 @@
+import os
 import unittest
 import pprint
 import random
@@ -51,7 +52,14 @@ class TestAtlasCluster(unittest.TestCase):
 
     def test_getcluster(self):
         clusters = self._org.get_cluster("GDELT")
-        self.assertEqual( len(clusters), 1)
+        self.assertEqual(len(clusters), 1)
+
+    def test_dumpload(self):
+        clusters = self._org.get_cluster("GDELT")
+        AtlasCluster.dump("gdelt.json", clusters[0].resource)
+        new_cluster=AtlasCluster.load("gdelt.json")
+        self.assertEqual(clusters[0].resource, new_cluster)
+        os.unlink("gdelt.json")
 
 if __name__ == '__main__':
     unittest.main()
