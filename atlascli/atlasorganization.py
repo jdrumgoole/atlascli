@@ -1,4 +1,3 @@
-
 from typing import List, Dict, Generator
 
 from colorama import Fore
@@ -12,16 +11,16 @@ import pprint
 
 from atlascli.atlasresource import AtlasResource
 
-    
+
 class AtlasOrganization(AtlasResource):
 
-    def __init__(self, populate: bool = False, public_key:str = None, private_key: str = None):
- 
+    def __init__(self, public_key: str = None, private_key: str = None, populate: bool = False, ):
+
         api = AtlasAPI(AtlasKey(public_key, private_key))
         super().__init__(api, api.get_organization())
         self._clusters = []
         self._projects = {}
-        #pprint.pprint(self._projects)
+        # pprint.pprint(self._projects)
         self._project_cluster_map = {}
         if populate:
             self.populate_projects()
@@ -54,7 +53,7 @@ class AtlasOrganization(AtlasResource):
             return self._project_cluster_map
 
     def populate_projects(self):
-        new_projects ={}
+        new_projects = {}
         for project in [AtlasProject(self.api, x) for x in self._api.get_projects()]:
             # pprint.pprint(project)
             new_projects[project.id] = project
@@ -67,7 +66,7 @@ class AtlasOrganization(AtlasResource):
         for project in self.projects.values():
             clusters = [AtlasCluster(self._api, project.id, x) for x in self._api.get_clusters(project.id)]
             new_clusters.extend(clusters)
-            #pprint.pprint(clusters)
+            # pprint.pprint(clusters)
             new_project_cluster_map[project.id] = clusters
 
         self._clusters = new_clusters
@@ -81,16 +80,16 @@ class AtlasOrganization(AtlasResource):
     def is_project_id(self, project_id: str) -> bool:
         return project_id in self.projects
 
-    def is_cluster_name(self, cluster_name:str)->bool:
-        #print(f"is_cluster_name({cluster_name})")
-        #pprint.pprint([x.name for x in self._clusters])
-        return any([ x.name == cluster_name for x in self.clusters])
+    def is_cluster_name(self, cluster_name: str) -> bool:
+        # print(f"is_cluster_name({cluster_name})")
+        # pprint.pprint([x.name for x in self._clusters])
+        return any([x.name == cluster_name for x in self.clusters])
 
-    def is_unique(self, cluster_name:str) -> bool:
+    def is_unique(self, cluster_name: str) -> bool:
         l = self.get_cluster(cluster_name)
         return len(l) == 1
 
-    def get_project_ids(self, cluster_name:str):
+    def get_project_ids(self, cluster_name: str):
         project_ids = []
         for project_id, project in self.projects.items():
             for cluster in self.project_cluster_map[project_id]:
@@ -98,34 +97,34 @@ class AtlasOrganization(AtlasResource):
                     project_ids.append(project.id)
         return project_ids
 
-
     def __str__(self):
         return f"{pprint.pformat(self._resource)}"
+
     # def __str__(self):
     #     return f"id:{self.id} name:'{self.name}'"
 
-    def get_projects(self)->Dict[str, AtlasProject]:
+    def get_projects(self) -> Dict[str, AtlasProject]:
         return list(self.projects.values())
 
-    def get_project_id(self, project_name:str):
+    def get_project_id(self, project_name: str):
         for i in self.projects.values():
             if i.name == project_name:
                 return i.id
         return None
 
-    def get_project_name(self, project_id:str):
+    def get_project_name(self, project_id: str):
         for i in self.projects.values():
-            #pprint.pprint(i.id)
+            # pprint.pprint(i.id)
             if i.id == project_id:
                 return i.name
         return None
- 
-    def get_cluster(self, cluster_name: str, project_id: object = None)-> List[AtlasCluster]:
+
+    def get_cluster(self, cluster_name: str, project_id: object = None) -> List[AtlasCluster]:
         # 
         # Cluster names are not unique so we might get more than one cluster
         # when we request a cluster.
         #
-        clusters = [] 
+        clusters = []
         for i in self.clusters:
             if i.name == cluster_name:
                 if project_id is None:
@@ -133,23 +132,20 @@ class AtlasOrganization(AtlasResource):
                 elif project_id == i.project_id:
                     clusters.append(i)
         return clusters
- 
-    def get_clusters(self, project_id:str=None)->Generator[AtlasCluster, None, None]:
+
+    def get_clusters(self, project_id: str = None) -> Generator[AtlasCluster, None, None]:
         for c in self.clusters:
             if project_id is None:
                 yield c
             elif project_id == c.project_id:
                 yield c
 
-
-    def pause_cluster(self, project_id:str, cluster_name:str):
+    def pause_cluster(self, project_id: str, cluster_name: str):
         clusters = self.get_clusters()
 
     def pprint(self):
         print(self.summary())
         for project in self.projects.values():
             print(f"   {project.summary()}")
-            for cluster in self._project_cluster_map[project.id]:
+            for cluster in self.project_cluster_map[project.id]:
                 print(f"     {cluster.summary()}")
-
-

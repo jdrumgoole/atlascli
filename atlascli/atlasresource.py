@@ -23,7 +23,7 @@ class AtlasResource:
     Base class for Atlas Resources
     """
 
-    def __init__(self, api:AtlasAPI=None, resource:Dict=None):
+    def __init__(self, api: AtlasAPI=None, resource: Dict=None):
         if resource:
             self._resource = resource
             if "created" in self._resource:  # convert date string to datetime obj
@@ -39,6 +39,7 @@ class AtlasResource:
     @property
     def api(self):
         return self._api
+
     @property
     def timestamp(self):
         return self._timestamp
