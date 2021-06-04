@@ -30,11 +30,12 @@ from atlascli.version import __VERSION__
 from atlascli.atlasorganization import AtlasOrganization
 from atlascli.atlascluster import AtlasCluster
 
+
 class ParseError(ValueError):
     pass
 
 
-def parse_id(s:str, sep:str=":")->tuple:
+def parse_id(s: str, sep: str = ":") -> tuple:
     """
 
     :param s: A sting of the form <id1>:<id2> used to specify an ID tuple
@@ -55,45 +56,42 @@ def parse_id(s:str, sep:str=":")->tuple:
         raise ParseError(f"Bad separator '{separator}' in {s}")
     return id1, id2
 
+    # class ClusterState(Enum):
+    #     PAUSE = "pause"
+    #     RESUME = "resume"
 
-# class ClusterState(Enum):
-#     PAUSE = "pause"
-#     RESUME = "resume"
+    #     def __str__(self):
+    #         return self.value
 
-#     def __str__(self):
-#         return self.value
+    # class HTTPOperationName(Enum):
+    #     GET = "get"
+    #     POST = "post"
+    #     PATCH = "patch"
 
+    #     def __str__(self):
+    #         return self.value
 
-# class HTTPOperationName(Enum):
-#     GET = "get"
-#     POST = "post"
-#     PATCH = "patch"
+    # class AtlasOperationName(Enum):
+    #     CREATE = "create"
+    #     PATCH = "patch"
+    #     DELETE = "delete"
+    #     LIST = "list"
+    #     PAUSE = "pause"
+    #     RESUME = "resume"
 
-#     def __str__(self):
-#         return self.value
+    #     def __str__(self):
+    #         return self.value
 
-
-# class AtlasOperationName(Enum):
-#     CREATE = "create"
-#     PATCH = "patch"
-#     DELETE = "delete"
-#     LIST = "list"
-#     PAUSE = "pause"
-#     RESUME = "resume"
-
-#     def __str__(self):
-#         return self.value
-
-
-# class AtlasResourceName(Enum):
-#     ORGANIZATION = "organization"
-#     PROJECT = "project"
-#     CLUSTER = "cluster"
+    # class AtlasResourceName(Enum):
+    #     ORGANIZATION = "organization"
+    #     PROJECT = "project"
+    #     CLUSTER = "cluster"
 
     def __str__(self):
         return self.value
 
-def pause_cluster(c:AtlasCluster):
+
+def pause_cluster(c: AtlasCluster):
     if c.is_paused():
         print(f"Cluster '{c.name}' is already paused")
     else:
@@ -102,7 +100,8 @@ def pause_cluster(c:AtlasCluster):
 
         print(f"Paused cluster '{c.name}' at {datetime.now().strftime('%H:%M:%S')}")
 
-def resume_cluster(c:AtlasCluster):
+
+def resume_cluster(c: AtlasCluster):
     if c.is_paused():
         print(f"Resuming '{c.name}'")
         c.resume()
@@ -110,41 +109,43 @@ def resume_cluster(c:AtlasCluster):
     else:
         print(f"'{c.name}' is already running, nothing to do")
 
-def pause_command(org:AtlasOrganization, arg_project_ids:List[str], arg_cluster_names:List[str]):
+
+def pause_command(org: AtlasOrganization, arg_project_ids: List[str], arg_cluster_names: List[str]):
     for cluster_name in arg_cluster_names:
         clusters = org.get_cluster(cluster_name)
         if len(clusters) == 0:
             print(f"No such cluster '{cluster_name}'")
         elif len(clusters) == 1:
             pause_cluster(clusters[0])
-        elif len(arg_project_ids) == 1 :
+        elif len(arg_project_ids) == 1:
             clusters = org.get_cluster(cluster_name, arg_project_ids[0])
             pause_cluster(clusters[0])
-        elif len(arg_project_ids) < 1 :
+        elif len(arg_project_ids) < 1:
             print("You must specify only one project ID when pausing multiple clusters")
             print("You specified none (use the --project_id argument)")
         else:
             print("You must specify at least one project ID when pausing multiple clusters")
-            print(f"You specified several project IDs: {arg_project_ids}")       
+            print(f"You specified several project IDs: {arg_project_ids}")
 
             # pprint.pprint(result)
 
-def resume_command(org:AtlasOrganization, arg_project_ids:List[str], arg_cluster_names:List[str]):
+
+def resume_command(org: AtlasOrganization, arg_project_ids: List[str], arg_cluster_names: List[str]):
     for cluster_name in arg_cluster_names:
         clusters = org.get_cluster(cluster_name)
         if len(clusters) == 0:
             print(f"No such cluster '{cluster_name}'")
         elif len(clusters) == 1:
             resume_cluster(clusters[0])
-        elif len(arg_project_ids) == 1 :
+        elif len(arg_project_ids) == 1:
             clusters = org.get_cluster(cluster_name, arg_project_ids[0])
             resume_cluster(clusters[0])
-        elif len(arg_project_ids) < 1 :
+        elif len(arg_project_ids) < 1:
             print("You must specify only one project ID when resuming multiple clusters")
             print("You specified none (use the --project_id argument)")
         else:
             print("You must specify at least one project ID when resuming multiple clusters")
-            print(f"You specified several project IDs: {arg_project_ids}") 
+            print(f"You specified several project IDs: {arg_project_ids}")
 
 
 def main():
@@ -188,18 +189,22 @@ def main():
                         default=False,
                         help="List all clusters")
 
+    parser.add_argument("--createcluster", help="Create a cluster from the JSON file specified  as an argument")
+
     parser.add_argument("-o", "--output", default=None,
                         help="Specify a file for output")
+
+    parser.add_argument("--clusterconfig", help="Name of the file used for cluster configuration with --createcluster")
+
+    parser.add_argument("--clustername", help="Name of cluster to be created")
 
     parser.add_argument("-pid", "--project_id", default=[], dest="project_id_list",
                         action="append",
                         help="specify the project ID for cluster that is to be paused")
-    # parser.add_argument('--format', type=OutputFormat,
-    #                     default=OutputFormat.SUMMARY, choices=list(OutputFormat),
-    #                     help="The format to output data either in a single line "
-    #                          "summary or a full JSON document [default: %(default)s]")
+
     parser.add_argument("-d", "--debug", default=False, action="store_true",
                         help="Turn on logging at debug level")
+
     # parser.add_argument("--http", type=HTTPOperationName, choices=list(HTTPOperationName),
     #                     help="do a http operation")
     # parser.add_argument("--url", help="URL for HTTP operation")
@@ -211,7 +216,7 @@ def main():
     # Initializes Colorama
     init(autoreset=True)
 
-    if len(sys.argv)==1:
+    if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(0)
 
@@ -246,7 +251,7 @@ def main():
                   "arg or the environment variable ATLAS_PRIVATE_KEY")
             sys.exit(1)
 
-    org = AtlasOrganization(public_key, private_key) 
+    org = AtlasOrganization(public_key, private_key, populate=False)
 
     if args.list:
         org.pprint()
@@ -263,9 +268,20 @@ def main():
         default_cluster = AtlasCluster.default_single_region_cluster()
         if args.output:
             with open(args.output, "w") as output_file:
-                output_file.write(json.dumps(default_cluster))
+                output_file.write(json.dumps(default_cluster, indent=2))
         else:
             print(AtlasCluster.pretty_dict(default_cluster))
+
+    if args.createcluster:
+        if args.clusterconfig:
+            with open(args.clusterconfig, "r") as input_file:
+                cfg = json.load(input_file)
+            if args.clustername:
+                cluster_name = args.clustername
+            else:
+                cluster_name = AtlasAPI.random_name()
+            print(f"Creating cluster {cluster_name} from cluster configuration {args.clusterconfig}")
+            org.create_cluster(cfg, cluster_name)
 
     if args.listcluster:
         if args.project_id_list:
@@ -285,9 +301,10 @@ def main():
 
     if args.pause_cluster or args.resume_cluster:
         if args.pause_cluster:
-            pause_command(org, args.project_id_list, args.pause_cluster) 
+            pause_command(org, args.project_id_list, args.pause_cluster)
         if args.resume_cluster:
             resume_command(org, args.project_id_list, args.resume_cluster)
+
 
 if __name__ == "__main__":
     try:
