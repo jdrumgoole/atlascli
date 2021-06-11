@@ -16,12 +16,12 @@ class TestPauseResume(unittest.TestCase):
     def test_pause(self):
         cluster = self._org.get_cluster("MOT")[0]
         if not cluster.is_paused():
-            cluster.pause()
+            cluster.pause_cluster()
 
     def test_resume(self):
         cluster = self._org.get_cluster("MOT")[0]
         if cluster.is_paused(): 
-            cluster.resume()
+            cluster.resume_cluster()
 
 if __name__ == '__main__':
     unittest.main()

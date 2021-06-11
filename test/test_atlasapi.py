@@ -2,13 +2,15 @@ import unittest
 import pprint
 
 from atlascli.atlasapi import AtlasAPI
-from atlascli.errors import AtlasGetError
+from atlascli.atlasproject import AtlasProject
+from atlascli.errors import AtlasGetError, AtlasError
 
 
 class TestAtlasAPI(unittest.TestCase):
 
     def setUp(self) -> None:
         self._api = AtlasAPI()
+        self._api.authenticate()
 
     def test_project(self):
         org = self._api.get_this_organization()
@@ -40,10 +42,10 @@ class TestAtlasAPI(unittest.TestCase):
         del dummy_cluster["stateName"]
         dummy_cluster["diskSizeGB"] = 60
         dummy_cluster["paused"] = False
-        created_cluster = self._api.create_cluster("5a141a774e65811a132a8010", dummy_cluster)
-        read_cluster = self._api.get_one_cluster("5a141a774e65811a132a8010", dummy_cluster["name"])
+        created_cluster = self._api.create_cluster(dummy_cluster.project_id, dummy_cluster.name, dummy_cluster.resource)
+        read_cluster = self._api.get_one_cluster("5a141a774e65811a132a8010", dummy_cluster.name)
         #self.assertEqual(dummy_cluster, read_cluster)
-        self._api.delete_cluster("5a141a774e65811a132a8010", dummy_cluster["name"])
+        self._api.delete_cluster(dummy_cluster)
 
     def test_organization(self):
         org = self._api.get_organization()
@@ -53,7 +55,16 @@ class TestAtlasAPI(unittest.TestCase):
     def test_projects(self):
         projects = list(self._api.get_project_ids())
         # print(projects)
-        self.assertTrue( "5f5fb85be8f4302a2bc457f1" in projects)
+        self.assertTrue("5f5fb85be8f4302a2bc457f1" in projects)
+
+    def test_authenticated(self):
+        api = AtlasAPI()
+        with self.assertRaises(AtlasError):
+            project = api.get_one_project("5a141a774e65811a132a8010")
+
+        api.authenticate()
+        project = api.get_one_project("5a141a774e65811a132a8010")
+        self.assertEqual(type(project), type(AtlasProject()))
 
 if __name__ == '__main__':
     unittest.main()

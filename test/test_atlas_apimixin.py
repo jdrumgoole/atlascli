@@ -7,7 +7,8 @@ from atlascli.atlasapi import AtlasAPI
 class TestAPIMixin(unittest.TestCase):
 
     def setUp(self):
-        self._api=AtlasAPI()
+        self._api= AtlasAPI()
+        self._api.authenticate()
 
     def tearDown(self):
         pass

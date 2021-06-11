@@ -17,7 +17,7 @@ URL = 'https://github.com/jdrumgoole/atlascli'
 EMAIL = 'joe@joedrumgoole.com'
 AUTHOR = 'Joe Drumgoole'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = "0.2.7"
+VERSION = "0.2.8"
 
 
 # What packages are optional?

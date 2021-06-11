@@ -10,18 +10,22 @@ more clusters.
 
 Author:joe@joedrumgoole.com
 """
-import string
-from functools import lru_cache
-import random
-from typing import Generator, List, Dict
 import logging
 import pprint
+import random
+import string
+from functools import lru_cache
+from typing import Generator, Dict
 
 import requests
 from requests.auth import HTTPDigestAuth
 
+from atlascli.atlascluster import AtlasCluster
 from atlascli.atlaskey import AtlasKey
-from atlascli.errors import AtlasInitialisationError, AtlasGetError, AtlasPostError
+from atlascli.atlasorganization import AtlasOrganization
+from atlascli.atlasproject import AtlasProject
+from atlascli.errors import AtlasError, AtlasInitialisationError, AtlasGetError, AtlasPostError, AtlasPatchError, \
+    AtlasDeleteError
 
 
 class AtlasAPI:
@@ -33,8 +37,7 @@ class AtlasAPI:
     ATLAS_HEADERS = {"Accept"       : "application/json",
                      "Content-Type" : "application/json"}
 
-    def __init__(self, key : AtlasKey = None, page_size: int = 100):
-        self._api_key: AtlasKey = key
+    def __init__(self, page_size: int = 100):
         self._auth = None
         self._log = logging.getLogger(__name__)
         self._page_size = page_size
@@ -42,16 +45,13 @@ class AtlasAPI:
         if self._page_size < 1 or self._page_size > 500 :
             raise AtlasInitialisationError("'page_size' must be between 1 and 500")
 
-        if not self._api_key:
-            self._api_key = AtlasKey.get_from_env()
+    def authenticate(self, key: AtlasKey = None):
+        if not key:
+            key = AtlasKey.get_from_env()
+        self._auth = HTTPDigestAuth(key.public_key, key.private_key)
 
-        # print(self._username)
-        # print(self._api_key)
-        self._auth = HTTPDigestAuth(self._api_key.public_key, self._api_key.private_key)
-
-    @property
-    def api_key(self):
-        return self._atlas_requests.api_key
+    def is_authenticated(self):
+        return self._auth is not None
 
     def set_logging_level(self, level):
         self._log.setLevel(level)
@@ -62,6 +62,9 @@ class AtlasAPI:
 
     def post(self, resource, data):
         self._log.debug(f"post({resource}, {data})")
+
+        if not self.is_authenticated():
+            raise AtlasError("You have not authenticated your Atlas API key")
 
         try:
             #print(f"requests.post(url={resource}, data={data}, headers={self.ATLAS_HEADERS}, auth={self._auth})")
@@ -84,8 +87,9 @@ class AtlasAPI:
         self._log.debug(f"get({resource})")
         # Need to use the raw URL when getting linked data
 
-        assert self._api_key is not None
-        assert self._api_key != ""
+
+        if not self.is_authenticated():
+            raise AtlasError("You have not authenticated your Atlas API key")
 
         args =""
         if "itemsPerPage" not in resource:
@@ -125,6 +129,8 @@ class AtlasAPI:
         return self.delete(f"{self.ATLAS_BASE_URL}{resource}")
 
     def patch(self, resource, patch_doc):
+        if not self.is_authenticated():
+            raise AtlasError("You have not authenticated your Atlas API key")
         try:
             p = requests.patch(f"{resource}",
                                json=patch_doc,
@@ -139,6 +145,8 @@ class AtlasAPI:
 
     def delete(self, resource):
         self._log.debug(f"delete({resource})")
+        if not self.is_authenticated():
+            raise AtlasError("You have not authenticated your Atlas API key")
         try:
             d = requests.delete(f"{resource}", headers=self.ATLAS_HEADERS, auth=self._auth)
             d.raise_for_status()
@@ -205,7 +213,7 @@ class AtlasAPI:
         for i in self.get_resource_by_item(f"/{field}"):
             yield i["name"]
 
-    def get_organization(self) -> Dict:
+    def get_organization(self) -> AtlasOrganization:
         """
         https://docs.atlas.mongodb.com/reference/api/organization-get-all/
         GET /orgs
@@ -216,9 +224,9 @@ class AtlasAPI:
         :return: list of AtlasOrganisations as a generator
         """
         for org in self.get_resource_by_item("/orgs"):
-            return org
+            return AtlasOrganization(org)
 
-    def get_this_organization(self) -> dict:
+    def get_this_organization(self) -> AtlasOrganization:
         """
         Get the organization. As there is only one organization associated
         with a programmatic key this returns that organization.
@@ -226,17 +234,17 @@ class AtlasAPI:
         :return: AtlasOrganization
         """
         for org in self.get_resource_by_item("/orgs"):
-            return org
+            return AtlasOrganization(org)
 
     @lru_cache(maxsize=500)
     def get_one_cached_organization(self, org_id:str)->Dict:
-        return self.get(f"/orgs/{org_id}")
+        return AtlasOrganization(self.get(f"/orgs/{org_id}"))
 
     def get_one_organization(self, org_id:str)->dict:
-        return self.atlas_get(f"/orgs/{org_id}")
+        return AtlasOrganization(self.atlas_get(f"/orgs/{org_id}"))
 
     def create_organization(self, name:str)->dict:
-        return self.atlas_post(f"/orgs", { "name" : name})
+        return AtlasOrganization(self.atlas_post(f"/orgs", { "name" : name}))
 
     def delete_organization(self, name):
         return self.delete(f"/orgs/{name}")
@@ -245,7 +253,7 @@ class AtlasAPI:
     # Project Methods
     #
 
-    def create_project(self, org_id, project_name)->Dict:
+    def create_project(self, org_id, project_name) -> AtlasProject:
         """
         https://docs.atlas.mongodb.com/reference/api/project-create-one/
         POST /api/atlas/v1.0/groups
@@ -254,9 +262,9 @@ class AtlasAPI:
         :param project_name:
         :return: project doc
         """
-        return self.atlas_post(resource=f"/groups", data={"name": project_name, "orgId": org_id})
+        return AtlasProject(self.atlas_post(resource=f"/groups", data={"name": project_name, "orgId": org_id}))
 
-    def delete_project(self, project_id)->Dict:
+    def delete_project(self, project_id) -> Dict:
         """
         https://docs.atlas.mongodb.com/reference/api/project-delete-one/
         DELETE /api/atlas/v1.0/groups/{GROUP-ID}
@@ -266,11 +274,11 @@ class AtlasAPI:
         """
         return self.atlas_delete(f"/groups/{project_id}")
 
-    def get_projects(self)->Generator[dict, None, None]:
+    def get_projects(self) -> Generator[dict, None, None]:
         for project in self.get_resource_by_item(f"/groups"):
-            yield project
+            yield AtlasProject(project)
 
-    def get_one_project(self, project_id)->Dict:
+    def get_one_project(self, project_id)-> AtlasProject:
         """
         https://docs.atlas.mongodb.com/reference/api/project-get-one/
         GET /api/atlas/v1.0/groups/{GROUP-ID}
@@ -278,13 +286,13 @@ class AtlasAPI:
         :param project_id:
         :return:
         """
-        return self.atlas_get(f"/groups/{project_id}")
+        return AtlasProject(self.atlas_get(f"/groups/{project_id}"))
 
     @lru_cache(maxsize=500)
-    def get_one_cached_project(self, project_id)->dict:
-        return self.atlas_get(f"/groups/{project_id}")
+    def get_one_cached_project(self, project_id) -> AtlasProject:
+        return AtlasProject(self.atlas_get(f"/groups/{project_id}"))
 
-    def get_project_ids(self)->Generator[str, None, None]:
+    def get_project_ids(self) -> Generator[str, None, None]:
         for project in self.get_resource_by_item(f"/groups"):
             yield project["id"]
 
@@ -296,63 +304,57 @@ class AtlasAPI:
     def cluster_url(project_id, cluster_name):
         return f"/groups/{project_id}/clusters/{cluster_name}"
 
-    def create_cluster(self, project_id:str, cluster_config:Dict):
-        return self.atlas_post(f"/groups/{project_id}/clusters", cluster_config)
+    def create_cluster(self, project_id: str, name: str, config: Dict) -> AtlasCluster:
 
-    def get_clusters(self, project_id)->Generator[str, None, None]:
+        config["name"] = name
+        created_cluster = self.atlas_post(f"/groups/{project_id}/clusters", config)
+        return AtlasCluster(project_id=project_id,
+                            name=name,
+                            cluster_config=created_cluster)
+
+    def get_clusters(self, project_id) -> Generator[str, None, None]:
         for cluster in self.get_resource_by_item(f"/groups/{project_id}/clusters"):
-            yield cluster
+            yield AtlasCluster(project_id, cluster["name"], cluster)
 
-    def delete_cluster(self, project_id, cluster_name)->dict:
+    def delete_cluster(self, c: AtlasCluster) -> Dict:
         """
         DELETE /api/atlas/v1.0/groups/{GROUP-ID}/clusters/{CLUSTER-NAME}
         https://docs.atlas.mongodb.com/reference/api/clusters-delete-one/
         """
-        return self.atlas_delete(f"/groups/{project_id}/clusters/{cluster_name}")
+        return self.atlas_delete(f"/groups/{c.project_id}/clusters/{c.name}")
 
-    def modify_cluster(self, project_id, cluster_name, modifications):
+    def modify_cluster(self, c: AtlasCluster, modifications: Dict) -> AtlasCluster:
         """
         PATCH /groups/{GROUP-ID}/clusters/{CLUSTER-NAME}
         https://docs.atlas.mongodb.com/reference/api/clusters-modify-one/
-        :param project_id:
-        :param cluster_name:
+        :param c:
         :param modifications:  A dict defining the fields to be changed
         :return: a Change doc reflecting the updated cluster
         """
 
-        return self.atlas_patch(f"/groups/{project_id}/clusters/{cluster_name}", data=modifications)
+        result = self.atlas_patch(f"/groups/{c.project_id}/clusters/{c.name}", data=modifications)
+        return AtlasCluster(c.project_id, c.name, result)
 
     @lru_cache(maxsize=500)
-    def get_one_cached_cluster(self, project_id, cluster_name):
-        return self.atlas_get(f"/groups/{project_id}/clusters/{cluster_name}")
+    def get_one_cached_cluster(self, project_id: str, cluster_name: str):
+        return self.get_one_cluster(project_id, cluster_name)
 
-    def get_one_cluster(self, project_id, cluster_name)->dict:
-        return self.atlas_get(self.cluster_url(project_id, cluster_name))
+    def get_one_cluster(self, project_id: str, cluster_name: str) -> AtlasCluster:
+        result = self.atlas_get(self.cluster_url(project_id, cluster_name))
+        return AtlasCluster(project_id, result["name"], result)
 
-    def pause(self, project_id, cluster_name):
+    def pause_cluster(self, c: AtlasCluster) -> AtlasCluster:
         pause_doc = {"paused": True}
-        return self.atlas_patch(f"/groups/{project_id}/clusters/{cluster_name}", pause_doc)
+        result = self.atlas_patch(f"/groups/{c.project_id}/clusters/{c.name}", pause_doc)
+        return AtlasCluster(c.project_id, c.name, result)
 
-    def resume(self, project_id, cluster_name):
+    def resume_cluster(self, c: AtlasCluster) -> AtlasCluster:
         pause_doc = {"paused": False}
-        return self.atlas_patch(f"/groups/{project_id}/clusters/{cluster_name}", pause_doc)
-
-
-    # def pprint(self, atlas_object, fmt=OutputFormat.SUMMARY):
-    #     if atlas_object is AtlasOrganization:
-    #         print("{0:<8}".format(self), end="")
-    #         print(atlas_object)
-    #         projects = self._atlas_api.get_projects()
-    #         for project in projects:
-    #             print("{0:<8}".format("Project"), end="")
-    #             print(project)
-    #             clusters = self._atlas_api.get_clusters(project.id)
-    #             for cluster in clusters:
-    #                 print("{0:<8}".format("Cluster"), end="")
-    #                 print(cluster)
+        result = self.atlas_patch(f"/groups/{c.project_id}/clusters/{c.name}", pause_doc)
+        return AtlasCluster(c.project_id, c.name, result)
 
     def __repr__(self):
-        return f"AtlasAPI(api_key={self._api_key}, page_size={self._page_size})"
+        return f"AtlasAPI(page_size={self._page_size})"
 
 
 

@@ -5,7 +5,7 @@ from atlascli.atlaskey import AtlasKey, AtlasEnv
 from atlascli.errors import AtlasEnvironmentError
 
 
-class MyTestCase(unittest.TestCase):
+class TestAtlasKey(unittest.TestCase):
 
     def setUp(self):
         self._public = os.environ[AtlasEnv.ATLAS_PUBLIC_KEY.value]

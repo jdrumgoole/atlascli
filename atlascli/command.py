@@ -29,7 +29,7 @@ class Command:
 
     def __new__(cls, atlas_key:AtlasKey=None, *args, **kwargs):
         cls.ATLAS_KEY = atlas_key
-        cls.API = AtlasAPI(cls.ATLAS_KEY)
+        cls.API = AtlasAPI()
         cls._inst = super(Command, cls).__new__(cls)
         return cls._inst
 

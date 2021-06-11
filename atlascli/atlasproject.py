@@ -1,4 +1,5 @@
 import pprint
+from typing import Dict
 
 from colorama import Fore
 from atlascli.atlasresource import AtlasResource
@@ -6,8 +7,8 @@ from atlascli.atlasresource import AtlasResource
 
 class AtlasProject(AtlasResource):
 
-    def __init__(self, api, project:dict=None):
-        super().__init__(api, project)
+    def __init__(self, project: Dict = None):
+        super().__init__(project)
 
     def summary(self):
         return f"{Fore.MAGENTA}project ID{Fore.RESET}: {self.id} {Fore.MAGENTA}Name{Fore.RESET}: {Fore.YELLOW}'{self.name}'"

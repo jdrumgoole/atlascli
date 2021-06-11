@@ -14,7 +14,7 @@ class OPCAPI:
     """
 
     def __init__(self, atlas_key:AtlasKey=None):
-        self._atlas_api =AtlasAPI(atlas_key)
+        self._atlas_api = AtlasAPI()
 
     """
     Organizations
@@ -59,20 +59,20 @@ class OPCAPI:
     """
     def get_one_cluster(self, project_id:str, cluster_name: str) -> AtlasCluster:
         cluster = self._atlas_api.get_one_cluster(project_id, cluster_name)
-        return AtlasCluster(cluster)
+        return AtlasCluster()
 
     def get_clusters(self, project_id) -> List[AtlasCluster]:
         result=[]
         clusters = self._atlas_api.get_clusters(project_id)
         for cluster in clusters:
-            result.append(AtlasCluster(cluster))
+            result.append(AtlasCluster())
         return result
 
     def pause_cluster(self, project_id:str, cluster_name:str):
-        return self._atlas_api.pause(project_id, cluster_name)
+        return self._atlas_api.pause_cluster(project_id, cluster_name)
 
     def resume_cluster(self, project_id:str, cluster_name:str):
-        return self._atlas_api.resume(project_id, cluster_name)
+        return self._atlas_api.resume_cluster(project_id, cluster_name)
 
     def __repr__(self):
         return f"OCPAPI(atlas_key={self._atlas_api.api_key})"
