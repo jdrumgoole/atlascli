@@ -25,8 +25,8 @@ class TestOrganization(unittest.TestCase):
         self.assertTrue(self._map.is_unique_cluster("MUGAlyser"))
 
     def test_get_project_ids(self):
-        self.assertEqual("5a141a774e65811a132a8010", self._map.get_project_ids("MOT")[0])
-        x = self._map.get_project_ids("XXXXX")
+        self.assertEqual("5a141a774e65811a132a8010", self._map.get_cluster_project_ids("MOT")[0])
+        x = self._map.get_cluster_project_ids("XXXXX")
         self.assertEqual(len(x), 0)
 
     def test_get_project_id(self):
@@ -40,6 +40,9 @@ class TestOrganization(unittest.TestCase):
     def test_is_projectid(self):
         self.assertTrue(self._map.is_project_id("5a141a774e65811a132a8010"))
 
+    def test_get_project_ids(self):
+        ids = self._map.get_project_ids()
+        self.assertTrue('5f5fb85be8f4302a2bc457f1' in ids)
 
 if __name__ == '__main__':
     unittest.main()

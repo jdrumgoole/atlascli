@@ -14,7 +14,7 @@ class AtlasOrganization(AtlasResource):
         super().__init__(org)
 
     def summary(self) -> str:
-        return f"{Fore.MAGENTA}Organization ID{Fore.RESET}: {self.id} {Fore.MAGENTA}Name{Fore.RESET}: {Fore.LIGHTYELLOW_EX}'{self.name}'"
+        return f"Organization ID: {self.pretty_id_name()}"
 
     def __str__(self):
         return f"{pprint.pformat(self._resource)}"

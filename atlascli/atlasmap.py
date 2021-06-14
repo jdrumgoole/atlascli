@@ -48,6 +48,10 @@ class AtlasMap:
         else:
             return self.populate_clusters()
 
+    @property
+    def organization(self):
+        return self._org
+
     def populate(self):
         self.populate_projects()
         self.populate_clusters()
@@ -95,13 +99,20 @@ class AtlasMap:
         else:
             return None
 
-    def get_project_ids(self, cluster_name: str):
+    def get_cluster_names(self):
+        for i in self.clusters:
+            yield i.name
+
+    def get_cluster_project_ids(self, cluster_name: str):
         project_ids = []
         for project_id, project in self.projects.items():
             for cluster in self.project_cluster_map[project_id]:
                 if cluster.name == cluster_name:
                     project_ids.append(project.id)
         return project_ids
+
+    def get_project_ids(self) -> List[str]:
+        return list(self.projects.keys())
 
     def get_one_project(self, project_id:str) -> AtlasProject:
         return self.projects[project_id]
@@ -171,7 +182,7 @@ class AtlasMap:
     def pprint(self):
         print(self._org.summary())
         for project in self.projects.values():
-            print(f"{project.summary():<40}")
+            print(f"  Project: {project.pretty_id_name():<40}")
             for cluster in self.project_cluster_map[project.id]:
-                print(f"     {cluster.summary()}")
+                print(f"     Cluster: {cluster.summary()}")
 

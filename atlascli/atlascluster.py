@@ -87,18 +87,9 @@ class AtlasCluster(AtlasResource):
             return f"{Fore.LIGHTRED_EX}Deleting...{Fore.RESET}"
         elif self.resource["stateName"] == "IDLE":
             if self.is_paused():
-                return f"{Fore.RED}Paused{Fore.RESET}"
+                return f"{Fore.LIGHTBLUE_EX}Paused{Fore.RESET}"
             else:
-                return f"{Fore.GREEN}running{Fore.RESET}"
+                return f"{Fore.RED}running{Fore.RESET}"
 
     def summary(self):
-        if self.is_paused():
-            status_label = Fore.CYAN + "paused" + Fore.RESET
-        else:
-            status_label = Fore.RED + "running" + Fore.RESET
-
-        cluster_name = "'" + self.name + "'"
-        return f"{Fore.MAGENTA}cluster ID{Fore.RESET}: {self.id:10} "\
-               f"{Fore.MAGENTA}name{Fore.RESET}:"\
-               f"{Fore.GREEN}{cluster_name:20}{Fore.RESET} "\
-               f"state: {self.status()}"
+        return f"{self.pretty_id_name():70} state: {self.status():20}"

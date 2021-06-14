@@ -6,6 +6,8 @@ from datetime import datetime
 from dateutil import parser
 from typing import Dict
 
+from colorama import Fore
+
 from atlascli.outputformat import OutputFormat
 from pygments import highlight
 from pygments.styles import default, colorful, emacs, get_style_by_name
@@ -115,6 +117,15 @@ class AtlasResource:
             if c not in AtlasResource.CLUSTER_NAME_CHARS:
                 return False
         return True
+
+    def pretty_id(self):
+        return f"{Fore.CYAN}{self.id}{Fore.RESET}"
+
+    def pretty_name(self):
+        return f"{Fore.GREEN}{self.name}{Fore.RESET}"
+
+    def pretty_id_name(self):
+        return f"{self.pretty_id()}:{self.pretty_name()}"
 
     def __str__(self):
         return f"{pprint.pformat(self._resource)}"

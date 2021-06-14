@@ -1,9 +1,11 @@
 from datetime import datetime
 import json
 import os.path
+from typing import List
 
 from atlascli.atlascluster import AtlasCluster
 from atlascli.atlasmap import AtlasMap
+from atlascli.atlasresource import AtlasResource
 from atlascli.clusterid import ClusterID
 
 from colorama import init, Fore
@@ -34,7 +36,7 @@ class Commands:
                 raise SystemExit(f"command needs an argument")
             project_id, cluster_name = ClusterID.parse_cluster_name(cluster_arg)
             if project_id is None:
-                project_ids = self._map.get_project_ids(cluster_name)
+                project_ids = self._map.get_cluster_project_ids(cluster_name)
                 if len(project_ids) == 0:
                     raise SystemExit(f"{cluster_name} is not a valid cluster name")
                 elif len(project_ids) > 1:
@@ -78,13 +80,22 @@ class Commands:
         else:
             print(AtlasCluster.pretty_dict(default_cluster))
 
-    def list_project_cmd(self, args):
-        if args.project_id_list:
-            for project_id in args.project_id_list:
-                print(self._map.get_one_project(project_id).pretty(), end="")
+    def list_projects(self, projects: List[str], output = None):
+        if projects is None or len(projects) == 0:
+            project_ids = self._map.get_project_ids()
         else:
-            for project in self._map.get_projects():
-                print(project.pretty(), end="")
+            project_ids = projects
+
+        for pid in project_ids:
+            if self._map.is_project_id(pid):
+                project = self._map.get_one_project(pid)
+                if output:
+                    output.write(project.json())
+                    print(f"wrote project {project.summary()} to {output.name}")
+                else:
+                    print(project.pretty(), end="")
+            else:
+                print(f"{pid} is not a valid project_id in this organization")
 
     def create_cluster_cmd(self, args):
         project_id, cluster_name = ClusterID.parse_cluster_name(args.createcluster)
@@ -106,16 +117,6 @@ class Commands:
         else:
             print(f"No clusterconfig file specified with --clusterconfig")
 
-    def list_cluster_cmd(self, args):
-        for i in args.listcluster:
-            cluster_id = self.preflight_cluster_arg(i) # need to handle naked cluster names
-            for cluster in self._map.get_cluster(cluster_id.project_id, cluster_id.name):
-                if args.output:
-                    print(f"Writing {cluster_id} to {args.output}")
-                    AtlasCluster.dump(args.output, cluster.resource)
-                else:
-                    print(f"\nProject: '{cluster_id.project_id}' Cluster: '{cluster_id.name}'")
-                    print(cluster.pretty())
 
     @staticmethod
     def strip_cluster_cmd(args):
@@ -144,9 +145,31 @@ class Commands:
         else:
             print("delete aborted")
 
-    def pause_cmd(self, args):
+    def list_cluster(self, cluster_names: List[str], output=None):
+        for i in cluster_names:
+            cluster_id = self.preflight_cluster_arg(i)  # need to handle naked cluster names
+            for cluster in self._map.get_cluster(cluster_id.name, cluster_id.project_id):
+                if output:
+                    print(f"Writing {cluster_id} to {output.name}")
+                    output.write(cluster.json())
+                else:
+                    print(f"\nProject: '{cluster_id.project_id}' Cluster: '{cluster_id.name}'")
+                    print(cluster.pretty())
 
-        for cluster_name in args.pausecluster:
+    def list_cmd(self, org:str, project_ids : List[str], cluster_names: List[str], output=None):
+        if not org and not project_ids and not cluster_names:
+            self._map.pprint()
+        else:
+            if org:
+                print(AtlasResource.pretty_dict(self._map.organization.resource))
+            if project_ids:
+                self.list_projects(project_ids, output)
+            if cluster_names:
+                self.list_cluster(cluster_names, output)
+
+    def pause_cmd(self, cluster_ids: List[str]):
+
+        for cluster_name in cluster_ids:
             cluster_id = self.preflight_cluster_arg(cluster_name)
             cluster = self._map.get_one_cluster(cluster_id.project_id, cluster_id.name)
             if cluster.is_paused():
@@ -156,9 +179,9 @@ class Commands:
                 self._map.api.pause_cluster(cluster)
                 print(f"Paused cluster '{cluster.name}' at {datetime.now().strftime('%H:%M:%S')}")
 
-    def resume_cmd(self, args):
+    def resume_cmd(self, cluster_ids: List[str]):
 
-        for cluster_name in args.resumecluster:
+        for cluster_name in cluster_ids:
             cluster_id = self.preflight_cluster_arg(cluster_name)
             cluster = self._map.get_one_cluster(cluster_id.project_id, cluster_id.name)
             if cluster.is_paused():
