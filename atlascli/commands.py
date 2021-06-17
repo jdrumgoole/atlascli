@@ -85,20 +85,15 @@ class Commands:
                 print(new_cluster.pretty())
 
     @staticmethod
-    def strip_cluster_cmd(args):
-        if args.stripcluster:
-            if os.path.isfile(args.stripcluster):
-                cfg = AtlasCluster.load(args.stripcluster)
-                new_cfg = AtlasCluster.strip_cluster_dict(cfg)
-                if args.output:
-                    AtlasCluster.dump(args.output, new_cfg)
-                    print(f"Stripped config created in '{Fore.MAGENTA}{args.output}{Fore.RESET}'")
-                else:
-                    print(AtlasCluster.pretty_dict(new_cfg))
-            else:
-                raise SystemExit(f"No such file {args.stripcluster}")
+    def strip_cluster_cmd(cfg_file, output_file=None):
+        cfg = json.load(cfg_file)
+        new_cfg = AtlasCluster.strip_cluster_dict(cfg)
+        if output_file:
+            output_file.write(json.dumps(new_cfg))
+            print(f"Stripped config created in '{Fore.MAGENTA}{output_file.name}{Fore.RESET}'")
         else:
-            print("No argument for --stripcluster commmand")
+            print(AtlasCluster.pretty_dict(new_cfg))
+
 
     def clone_cluster_cmd(self, cluster_name: str, output_file=None):
         cluster_id = self.preflight_cluster_arg(cluster_name)

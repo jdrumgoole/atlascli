@@ -111,13 +111,19 @@ def main(argv : list[str] = None):
                                help="Specify a JSON file we can use to create a cluster")
 
     delete_parser = subparsers.add_parser("delete", help="Delete a cluster")
-    
+
     delete_parser.add_argument("-c", "--cluster_name", type=ClusterID.canonical_name,
                                help="Delete cluster defined in arg")
 
-    parser.add_argument("--stripcluster", help="Take a JSON file containing a cluster config and strip out fields"
-                                               "that cannot be used to create a cluster from the config")
+    strip_parser = subparsers.add_parser("strip", help="Strip a cluster so it can be used for the create command")
 
+    strip_parser.add_argument("-j", "--jsonconfig", type=argparse.FileType("r", encoding='UTF-8'),
+                              help="Take a JSON file containing a cluster config and strip out fields"
+                                   "that cannot be used to create a cluster from the config")
+
+    strip_parser.add_argument('-o', '--output', type=argparse.FileType('w', encoding='UTF-8'),
+                              help="Send the output of the stripped config to this file")
+    
     parser.add_argument("-d", "--debug", default=False, action="store_true",
                         help="Turn on logging at debug level")
 
@@ -179,8 +185,8 @@ def main(argv : list[str] = None):
     if args.subparser_name == "create":
         commands.create_cluster_cmd(args.cluster_name, args.jsonconfig, args.output)
 
-    if args.stripcluster:
-        commands.strip_cluster_cmd(args)
+    if args.subparser_name == "strip":
+        commands.strip_cluster_cmd(args.jsonconfig, args.output)
 
     if args.subparser_name == "delete":
         commands.delete_cluster_cmd(args.cluster_name)
