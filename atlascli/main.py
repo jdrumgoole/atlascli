@@ -32,7 +32,9 @@ import logging
 
 from colorama import init, Fore
 
+from atlascli.atlascluster import AtlasCluster
 from atlascli.atlaskey import AtlasKey
+from atlascli.clusterid import ClusterID, ProjectID
 
 from atlascli.errors import AtlasError, AtlasGetError
 from atlascli.atlasapi import AtlasAPI
@@ -42,7 +44,7 @@ from atlascli.atlasmap import AtlasMap
 from atlascli.commands import Commands
 
 
-def main():
+def main(argv : list[str] = None):
 
     parser = argparse.ArgumentParser(description=
                                      f"A command line program to list organizations,"
@@ -51,84 +53,70 @@ def main():
                                      f" to work. See https://docs.atlas.mongodb.com/reference/api/apiKeys/ ",
                                      epilog=f"Version: {__VERSION__}")
 
-    subparsers = parser.add_subparsers(dest="subparser_name")
-
-    listprojects_parser = subparsers.add_parser('listprojects', aliases=["lp"])
-
-    listprojects_parser.add_argument('-pid', '--project_ids', nargs="*",
-                                     help="List of project IDs to output")
-
-    listprojects_parser.add_argument('-o', '--output', type=argparse.FileType('w', encoding='UTF-8'))
-
-    pause_parser = subparsers.add_parser('pause')
-
-    pause_parser.add_argument('-c', '--cluster_ids', nargs="*",
-                              help="List of Cluster IDs to pause")
-
-    resume_parser = subparsers.add_parser('resume')
-
-    resume_parser.add_argument('-c', '--cluster_ids', nargs="*",
-                               help="List of Cluster IDs to resume")
-
-    parser.add_argument("--listall", default=False, action="store_true")
-
-    list_parser = subparsers.add_parser('list')
-
-    list_parser.add_argument('-c', '--cluster_names', nargs="*",
-                               help="List of Cluster names to print")
-
-    list_parser.add_argument('-p', '--project_ids', nargs="*",
-                               help="List of Cluster IDs to print")
-
-    list_parser.add_argument('-org', '--organization', default=False, action="store_true",
-                             help="print out the organization")
-
-    list_parser.add_argument('-o', '--output', type=argparse.FileType('w', encoding='UTF-8'))
-
     parser.add_argument("--publickey", help="MongoDB Atlas public API key."
                                             "Can be read from the environment variable ATLAS_PUBLIC_KEY")
     parser.add_argument("--privatekey", help="MongoDB Atlas private API key."
                                              "Can be read from the environment variable ATLAS_PRIVATE_KEY")
 
-    parser.add_argument("--defaultcluster", default=False, action="store_true",
-                        help="Print out the default cluster we use to create clusters with the create command")
+    # parser.add_argument("--defaultcluster", default=False, action="store_true",
+    #                     help="Print out the default cluster we use to create clusters with the create command")
 
-    parser.add_argument("-p", "--pausecluster", default=[],
-                        action="append",
-                        help="pause named cluster in project specified by <project_id>:<cluster_name>"
-                             "if the cluster name is unique that is all that is required e.g. -p <cluster_name>"
-                             "Not that clusters that have been resumed cannot be paused for 60 minutes")
+    subparsers = parser.add_subparsers(dest="subparser_name")
 
-    parser.add_argument("-r", "--resumecluster", default=[],
-                        action="append",
-                        help="resume named cluster in project specified by <project_id>:<cluster_name>"
-                             "if the cluster name is unique that is all that is required e.g. -r <cluster_name>")
+    default_parser = subparsers.add_parser(name="defaultcluster", help="Create a default cluster in JSON")
 
-    parser.add_argument("-lc", "--listcluster",
-                        action="append",
-                        default=[],
-                        help="List all clusters in the organization")
+    default_parser.add_argument('-o', '--output', type=argparse.FileType('w', encoding='UTF-8'),
+                                 help="Write the default cluster to this file")
 
-    parser.add_argument("--getcluster", help="Get the configuration for a specific cluster")
+    clone_parser = subparsers.add_parser("clone")
 
-    parser.add_argument("--deletecluster", help="Delete cluster defined in arg")
+    clone_parser.add_argument("-c", "--cluster_name", type=ClusterID.validate_cluster_name, help="Clone this cluster")
 
-    parser.add_argument("--createcluster", help="Create a cluster from the JSON file specified  as an argument")
+    clone_parser.add_argument('-o', '--output', type=argparse.FileType('w', encoding='UTF-8'),
+                              help="Write the cloned cluster to this file")
 
-    # parser.add_argument("-o", "--output", default=None,
-    #                     help="Specify a file for output")
+    pause_parser = subparsers.add_parser('pause', help="Pause a cluster")
 
-    parser.add_argument('-o', '--output', type=argparse.FileType('w', encoding='UTF-8'))
+    pause_parser.add_argument('-c', '--cluster_name', type=ClusterID.validate_cluster_name, nargs="*",
+                              help="List of Cluster names to pause")
 
-    parser.add_argument("--clusterconfig", help="Name of the file used for cluster configuration with --createcluster")
+    resume_parser = subparsers.add_parser('resume', help="Resume a cluster")
+
+    resume_parser.add_argument('-c', '--cluster_name', type=ClusterID.validate_cluster_name, nargs="*",
+                               help="List of Cluster names to resume")
+
+    list_parser = subparsers.add_parser('list', help="List organizations, projects and/or clusters")
+
+    list_parser.add_argument('-c', '--cluster_name', type=ClusterID.validate_cluster_name, nargs="*",
+                             help="List of Cluster names to print")
+
+    list_parser.add_argument('-p', '--project_id', type=ProjectID.canonical_project_id, nargs="*",
+                               help="List of project IDs to print")
+
+    list_parser.add_argument('-org', '--organization', default=False, action="store_true",
+                             help="print out the organization")
+
+    list_parser.add_argument('-o', '--output', type=argparse.FileType('w', encoding='UTF-8'),
+                             help="Send the output of this list command to a file")
+
+    create_parser = subparsers.add_parser('create', help="Create a cluster")
+
+    create_parser.add_argument("-c", "--cluster_name", type=ClusterID.canonical_name,
+                               help="specify the name of the cluster as <project_id>:<cluster_name>")
+
+    create_parser.add_argument('-o', '--output', type=argparse.FileType('w', encoding='UTF-8'),
+                               help="Write the created cluster config to this file")
+
+    create_parser.add_argument("-j", "--jsonconfig", type=argparse.FileType("r", encoding='UTF-8'),
+                               help="Specify a JSON file we can use to create a cluster")
+
+    delete_parser = subparsers.add_parser("delete", help="Delete a cluster")
+    
+    delete_parser.add_argument("-c", "--cluster_name", type=ClusterID.canonical_name,
+                               help="Delete cluster defined in arg")
 
     parser.add_argument("--stripcluster", help="Take a JSON file containing a cluster config and strip out fields"
                                                "that cannot be used to create a cluster from the config")
-
-
-    # parser.add_argument("-pid", "--project_id", default=[], dest="project_id_list",
-    #                     action="append",
-    #                     help="specify the project ID for cluster that is to be paused")
 
     parser.add_argument("-d", "--debug", default=False, action="store_true",
                         help="Turn on logging at debug level")
@@ -136,11 +124,11 @@ def main():
     # Initializes Colorama
     init(autoreset=True)
 
-    if len(sys.argv) == 1:
-        parser.print_help(sys.stderr)
-        sys.exit(0)
+    # if len(argv) == 1:
+    #     parser.print_help(sys.stderr)
+    #     return
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.debug:
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -167,7 +155,7 @@ def main():
     else:
         private_key = os.getenv("ATLAS_PRIVATE_KEY")
         if private_key is None:
-            raise SystemExit("you must specify an an ATLAS private key via --privatekey"
+            raise SystemExit("you must specify an an ATLAS private key via --privatekey "
                              "arg or the environment variable ATLAS_PRIVATE_KEY")
 
     api = AtlasAPI()
@@ -182,48 +170,43 @@ def main():
     atlas_map = AtlasMap(org, api)
     commands = Commands(atlas_map)
 
-    if args.listall:
-        atlas_map.pprint()
+    if args.subparser_name == "clone":
+        commands.clone_cluster_cmd(args.cluster_name, args.output)
 
-    if args.subparser_name == "listprojects":
-        print(args.project_ids, args.output)
-        commands.list_project_cmd(args.project_ids, args.output)
+    if args.subparser_name == "defaultcluster":
+        commands.default_cluster_cmd(args.output)
 
-    if args.getcluster:
-        commands.get_cluster_cmd(args)
-
-    if args.defaultcluster:
-        commands.default_cluster_cmd(args)
-
-    if args.createcluster:
-        commands.create_cluster_cmd(args)
+    if args.subparser_name == "create":
+        commands.create_cluster_cmd(args.cluster_name, args.jsonconfig, args.output)
 
     if args.stripcluster:
         commands.strip_cluster_cmd(args)
-    if args.listcluster:
-        commands.list_cluster_cmd(args)
 
-    if args.deletecluster:
-        commands.delete_cluster_cmd(args)
+    if args.subparser_name == "delete":
+        commands.delete_cluster_cmd(args.cluster_name)
 
     if args.subparser_name == "pause" :
-        commands.pause_cmd(args.cluster_ids)
+        commands.pause_cmd(args.cluster_name)
 
     if args.subparser_name == "resume":
-        commands.resume_cmd(args.cluster_ids)
+        commands.resume_cmd(args.cluster_name)
 
     if args.subparser_name == "list":
-        print(args.cluster_names)
-        if args.cluster_names is not None and (len(args.cluster_names) == 0):
+
+        if args.cluster_name is not None and (len(args.cluster_name) == 0):
             cluster_names = list(atlas_map.get_cluster_names())
         else:
-            cluster_names = args.cluster_names
-        commands.list_cmd(args.organization, args.project_ids, cluster_names, args.output)
+            cluster_names = args.cluster_name
+        if args.project_id is not None and (len(args.project_id) == 0):
+            project_ids = list(atlas_map.get_project_ids())
+        else:
+            project_ids = args.project_id
+        commands.list_cmd(args.organization, project_ids, cluster_names, args.output)
 
 
 if __name__ == "__main__":
     try:
-        main()
+        main(sys.argv[1:])
     except AtlasError as e:
         print(f"{Fore.RED}AtlasError:")
         print(e)

@@ -9,7 +9,7 @@ from atlascli.atlasresource import AtlasResource
 
 class ProjectID:
 
-    def __init__(self, id:str, throw_exception: bool = True):
+    def __init__(self, id: str, throw_exception: bool = True):
         self._id = ProjectID.validate_project_id(id, throw_exception)
 
     @property
@@ -34,10 +34,19 @@ class ProjectID:
         for c in p:
             if c not in string.hexdigits:
                 if throw_exception:
-                    raise ValueError(f"Not valid project ID, string is not hexadecimal: '{p}'")
+                    raise ValueError(f"Not a valid project ID, string is not hexadecimal: '{p}'")
                 else:
                     return None
         return p
+
+    @staticmethod
+    def canonical_project_id(pid: str) -> str:
+        try:
+            return ProjectID.validate_project_id(pid, throw_exception=True)
+
+        except ValueError as e:
+            print(e)
+            raise
 
     def __eq__(self, rhs):
         return self.id == rhs.id
@@ -45,7 +54,11 @@ class ProjectID:
     def __str__(self):
         return f"{self.id}"
 
+
 class ClusterID:
+
+    CLUSTER_NAME_CHARS = string.ascii_letters + string.digits + '-'
+    # Valid characters in an Atlas cluster name
 
     def __init__(self, project_id: str, cluster_name: str, throw_exception: bool = True):
 
@@ -61,14 +74,16 @@ class ClusterID:
         return self._name
 
     @staticmethod
-    def validate_cluster_name(c: str, throw_exception=True) -> str:
-        if AtlasResource.is_valid_cluster_name(c):
-            return c
-        else:
-            if throw_exception:
-                raise ValueError(f"Not a valid cluster ID, only a-zA-Z, 0-9 and '-' are allowed")
-            else:
-                return None
+    def validate_cluster_name(cluster_name: str, throw_exception=True) -> str:
+        for c in cluster_name:
+            if c not in ClusterID.CLUSTER_NAME_CHARS:
+                if throw_exception:
+                    print(f"{Fore.RED}{cluster_name}{Fore.RESET} is not a valid cluster "
+                          f"(ASCII letters, numbers and '-' only")
+                    raise ValueError("{cluster_name} is not a valid cluster (ASCII letters, numbers and '-' only")
+                else:
+                    return None
+        return cluster_name
 
     @staticmethod
     def parse(s: str) -> ClusterID:
@@ -88,6 +103,27 @@ class ClusterID:
             return id, name
 
         raise ValueError(f"{cluster_name} cannot be parsed as a cluster name of the form 'id:name'")
+
+    @staticmethod
+    def canonical_name(cluster_name: str) -> str:
+        #
+        # check that the cluster name is of the form
+        # <project_id>:<cluster-name> Used by argparse. The name
+        # is tuned to fit the error message
+        #
+        project_id, sep, name = cluster_name.partition(":")
+        if len(sep) == 0:
+            print(f"{cluster_name} must have a project ID and a cluster name seperated by a ':'")
+            raise ValueError
+
+        try:
+            project_id = ProjectID.validate_project_id(project_id, throw_exception=True)
+            name = ClusterID.validate_cluster_name(name, throw_exception=True)
+        except ValueError as e:
+            print(e)
+            raise
+
+        return f"{project_id}:{name}"
 
     def __eq__(self, rhs):
         return (self.project_id == rhs.project_id) and (self.name == rhs.name)

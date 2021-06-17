@@ -182,7 +182,7 @@ class AtlasMap:
     def pprint(self):
         print(self._org.summary())
         for project in self.projects.values():
-            print(f"  Project: {project.pretty_id_name():<40}")
+            print(f" Project: {project.pretty_id_name():<40}")
             for cluster in self.project_cluster_map[project.id]:
-                print(f"     Cluster: {cluster.summary()}")
+                print(f"  Cluster: {cluster.summary()}")
 

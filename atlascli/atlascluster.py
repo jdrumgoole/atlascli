@@ -2,13 +2,16 @@ from __future__ import annotations
 import json
 import pprint
 from typing import Dict, Type, List
+import string
 
 from colorama import Fore, Style
 
 from atlascli.atlasresource import AtlasResource
+from atlascli.clusterid import ClusterID
 
 
 class AtlasCluster(AtlasResource):
+
 
     @classmethod
     def default_single_region_cluster(cls):
@@ -72,6 +75,13 @@ class AtlasCluster(AtlasResource):
     def is_paused(self):
         return self.resource["paused"]
 
+    @staticmethod
+    def is_valid_cluster_name(s: str) -> bool:
+        for c in s:
+            if c not in ClusterID.CLUSTER_NAME_CHARS:
+                return False
+        return True
+
     def __str__(self):
         return f"{pprint.pformat(self.resource)}"
 
@@ -90,6 +100,27 @@ class AtlasCluster(AtlasResource):
                 return f"{Fore.LIGHTBLUE_EX}Paused{Fore.RESET}"
             else:
                 return f"{Fore.RED}running{Fore.RESET}"
+        else:
+            return f"{self.resource['stateName']}"
+
+    def short_name(self):
+        return f"{self.project_id}:{self.name}"
+
+    def instance_size(self):
+        return self.resource["providerSettings"]["instanceSizeName"]
+
+    def pretty_instance_size(self):
+        return f"{Fore.LIGHTWHITE_EX}{self.instance_size()}{Fore.RESET}"
+
+    def pretty_id(self):
+        return f"{Fore.CYAN}{self.project_id}{Fore.RESET}"
+
+    def disk_size(self):
+        return self.resource["diskSizeGB"]
+
+    def pretty_disk_size(self):
+        return f"{Fore.LIGHTWHITE_EX}{self.disk_size()}{Fore.RESET}"
 
     def summary(self):
-        return f"{self.pretty_id_name():70} state: {self.status():20}"
+        return f"{self.pretty_id_name():65} instance size:{self.pretty_instance_size():>15} "\
+               f" disk GB:{self.pretty_disk_size():>15} state: {self.status():20}"

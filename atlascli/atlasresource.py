@@ -1,6 +1,4 @@
 import pprint
-import random
-import string
 import json
 from datetime import datetime
 from dateutil import parser
@@ -23,9 +21,6 @@ class AtlasResource:
     """
     Base class for Atlas Resources
     """
-
-    CLUSTER_NAME_CHARS = string.ascii_letters + string.digits + '-'
-    # Valid characters in an Atlas cluster name
 
     def __init__(self, resource: Dict = None):
         if resource:
@@ -93,7 +88,11 @@ class AtlasResource:
     @classmethod
     def pretty_dict(cls, d: Dict) -> str:
         return highlight(json.dumps(d, indent=2, default=json_datetime_encoder), JsonLexer(),
-                         Terminal256Formatter(style=get_style_by_name('emacs')))
+                              Terminal256Formatter(style=get_style_by_name('emacs')))
+
+    @staticmethod
+    def inputhighlight(s):
+        return f"{Fore.LIGHTWHITE_EX}{s}{Fore.RESET}"
 
     def pretty(self) -> str:
         return AtlasResource.pretty_dict(self._resource)
@@ -111,13 +110,6 @@ class AtlasResource:
     # def __call__(self):
     #     return self._resource
 
-    @staticmethod
-    def is_valid_cluster_name(s: str) -> bool:
-        for c in s:
-            if c not in AtlasResource.CLUSTER_NAME_CHARS:
-                return False
-        return True
-
     def pretty_id(self):
         return f"{Fore.CYAN}{self.id}{Fore.RESET}"
 
@@ -133,3 +125,7 @@ class AtlasResource:
     def __repr__(self):
         res = f"{pprint.pformat(self._resource, width=40)}"
         return f"{self.__class__.__name__}(resource={res})"
+
+
+def inputhighlight(s) -> str:
+    return AtlasResource.inputhighlight(s)
