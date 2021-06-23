@@ -1,3 +1,4 @@
+import json
 import unittest
 import logging
 import pprint
@@ -5,15 +6,27 @@ import pprint
 from atlascli.atlasapi import AtlasAPI
 from atlascli.atlascluster import AtlasCluster
 from atlascli.errors import AtlasGetError
-from atlascli.outputformat import OutputFormat
+from atlascli.config import Config
+from atlascli.atlaskey import AtlasKey
 
-import dictdiffer
 
 class TestAPI(unittest.TestCase):
 
-    def setUp(self) -> None:
+    ORG_ID = "5d97bcac9ccf641309000a18"
+    ORG_NAME = "Dummy Organisation"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._cfg = Config()
+        public_key, private_key = self._cfg.get_keys("Dummy Organisation")
+        assert public_key is not None
+        assert private_key is not None
+
         self._api = AtlasAPI()
-        self._api.authenticate()
+        self._api.authenticate(AtlasKey(public_key=public_key, private_key=private_key))
+
+    def setUp(self) -> None:
+        pass
 
     # def test_organization(self):
     #     orig = self._org.create_organization(name="dummy1")
@@ -43,24 +56,24 @@ class TestAPI(unittest.TestCase):
             if created_project:
                 self._api.delete_project(created_project.id)
 
-
-    def test_get_one_cluster(self):
-        mot_cluster = self._api.get_one_cluster("5a141a774e65811a132a8010", "MOT")
-        # pprint.pprint(mot_cluster)
-        self.assertEqual(mot_cluster["name"], "MOT")
-
     def test_cluster(self):
-        mot_cluster = self._api.get_one_cluster("5a141a774e65811a132a8010", "MOT")
-        # self._api.set_logging_level(logging.DEBUG)
-        dummy_cluster = AtlasCluster.strip_cluster(mot_cluster)
-        dummy_cluster.name = AtlasAPI.random_name()
-        # dummy_cluster.pprint(fmt=OutputFormat.JSON)
-        dummy_cluster["diskSizeGB"] = 60  # m10 clusters have a limit to how much disk space they can use
-        created_cluster = self._api.create_cluster("5a141a774e65811a132a8010",
-                                                   dummy_cluster.name, dummy_cluster.resource)
-        read_cluster = self._api.get_one_cluster("5a141a774e65811a132a8010", dummy_cluster["name"])
-        # self.assertEqual(dummy_cluster, read_cluster)
-        self._api.delete_cluster(dummy_cluster)
+        project_name = AtlasAPI.random_name()
+        cluster_name = AtlasAPI.random_name()
+        project = self._api.create_project(org_id=TestAPI.ORG_ID, project_name=project_name)
+        with open("stripped_demodata.json", "r") as input_file:
+            cfg = json.load(input_file)
+        cluster = self._api.create_cluster(project_id=project.id, name=cluster_name, config=cfg)
+        self._api.delete_cluster(cluster)
+        while True:
+            cluster_names = [x.name for x in self._api.get_clusters(project.id)]
+            if cluster_name not in cluster_names:
+                break
+
+        self._api.delete_project(project.id)
+        while True:
+            project_names = [x.name for x in self._api.get_projects()]
+            if project.name not in project_names:
+                break
 
 
 if __name__ == '__main__':

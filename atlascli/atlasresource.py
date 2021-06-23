@@ -119,13 +119,15 @@ class AtlasResource:
     def pretty_id_name(self):
         return f"{self.pretty_id()}:{self.pretty_name()}"
 
+    def pretty_project_id(self):
+        return f"{Fore.LIGHTWHITE_EX}{self.id}:{self.name}{Fore.RESET}"
+
     def __str__(self):
         return f"{pprint.pformat(self._resource)}"
 
     def __repr__(self):
         res = f"{pprint.pformat(self._resource, width=40)}"
         return f"{self.__class__.__name__}(resource={res})"
-
 
 def inputhighlight(s) -> str:
     return AtlasResource.inputhighlight(s)

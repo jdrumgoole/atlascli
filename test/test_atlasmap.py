@@ -1,6 +1,7 @@
 import unittest
 import os
 import pprint
+from datetime import datetime
 
 from atlascli.atlasapi import AtlasAPI
 from atlascli.atlasmap import AtlasMap
@@ -20,7 +21,28 @@ class TestOrganization(unittest.TestCase):
         self.assertTrue(self._map.is_cluster_name("covid-19"))
         self.assertTrue(self._map.is_cluster_name("DRA-Data"))
         self.assertTrue(self._map.is_cluster_name("MUGAlyser"))
-       
+
+    def test_cluster_list(self):
+        self._map.populate_cluster_map()
+        summary = self._org.summary()
+        for project in self._map.projects:
+            for k, v in self._map.project_cluster_map[project.id].items():
+                pass
+
+    def test_cluster_property(self):
+        start = datetime.utcnow()
+        clusters = self._map.clusters
+        finish = datetime.utcnow()
+        duration1 = finish - start
+        self.assertTrue(len(clusters) > 0)
+        start = datetime.utcnow()
+        clusters = self._map.clusters
+        finish = datetime.utcnow()
+        duration2 = finish - start
+        self.assertTrue(len(clusters) > 0)
+
+        self.assertGreater(duration1, duration2)
+
     def test_is_unique(self):
         self.assertTrue(self._map.is_unique_cluster("MUGAlyser"))
 

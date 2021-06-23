@@ -57,8 +57,8 @@ class AtlasAPI:
         self._log.setLevel(level)
 
     @staticmethod
-    def random_name():
-        return "ATLASCLI-"+''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+    def random_name(prefix="ATLASCLI"):
+        return prefix +''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
 
     def post(self, resource, data):
         self._log.debug(f"post({resource}, {data})")

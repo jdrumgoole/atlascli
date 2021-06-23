@@ -14,7 +14,7 @@ class AtlasOrganization(AtlasResource):
         super().__init__(org)
 
     def summary(self) -> str:
-        return f"Organization ID: {self.pretty_id_name()}"
+        return f"Organization ID: {self.pretty_project_id()}"
 
     def __str__(self):
         return f"{pprint.pformat(self._resource)}"

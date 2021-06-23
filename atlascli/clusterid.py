@@ -93,7 +93,7 @@ class ClusterID:
                          ClusterID.validate_cluster_name(cluster_name))
 
     @staticmethod
-    def parse_cluster_name(cluster_name: str) -> (str, str):
+    def parse_id_name(cluster_name: str) -> (str, str):
         id, sep, name = cluster_name.partition(":")
         if len(sep) == 0:
             return None, id

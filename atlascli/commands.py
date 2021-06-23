@@ -34,7 +34,7 @@ class Commands:
         try:
             if cluster_arg is None:
                 raise SystemExit(f"command needs an argument")
-            project_id, cluster_name = ClusterID.parse_cluster_name(cluster_arg)
+            project_id, cluster_name = ClusterID.parse_id_name(cluster_arg)
             if project_id is None:
                 project_ids = self._map.get_cluster_project_ids(cluster_name)
                 if len(project_ids) == 0:
@@ -71,8 +71,7 @@ class Commands:
             print(AtlasCluster.pretty_dict(default_cluster))
 
     def create_cluster_cmd(self, cluster_name: str, cfg_file, output_file=None):
-        project_id, cluster_name = ClusterID.parse_cluster_name(cluster_name)
-        project_id = self.pre_flight_project_id(project_id)
+        project_id, cluster_name = ClusterID.parse_id_name(cluster_name)
         if cfg_file:
             cfg_dict = json.load(cfg_file)
             print(f"Creating cluster {Fore.YELLOW}{project_id}{Fore.RESET}:{Fore.MAGENTA}{cluster_name}"
@@ -84,16 +83,28 @@ class Commands:
             else:
                 print(new_cluster.pretty())
 
+    def create_project_cmd(self, project_arg:str, output_file=None):
+        org_id, project_name = ClusterID.parse_id_name(project_arg)
+        if org_id == self._map.organization.id:
+            print(f"Creating project {org_id}:{project_name}")
+            project = self._map.api.create_project(org_id, project_name)
+            if output_file:
+                json.dump(output_file, project)
+                print(f"Cluster config created in '{Fore.MAGENTA}{output_file.name}{Fore.RESET}'")
+            else:
+                print(project.pretty())
+        else:
+            print(f"No such organization ID {org_id}")
+
     @staticmethod
-    def strip_cluster_cmd(cfg_file, output_file=None):
+    def template_cluster_cmd(cfg_file, output_file=None):
         cfg = json.load(cfg_file)
         new_cfg = AtlasCluster.strip_cluster_dict(cfg)
         if output_file:
             output_file.write(json.dumps(new_cfg))
-            print(f"Stripped config created in '{Fore.MAGENTA}{output_file.name}{Fore.RESET}'")
+            print(f"Template config created in '{Fore.MAGENTA}{output_file.name}{Fore.RESET}'")
         else:
             print(AtlasCluster.pretty_dict(new_cfg))
-
 
     def clone_cluster_cmd(self, cluster_name: str, output_file=None):
         cluster_id = self.preflight_cluster_arg(cluster_name)
@@ -107,11 +118,20 @@ class Commands:
 
     def delete_cluster_cmd(self, cluster_name: str):
         cluster_id = self.preflight_cluster_arg(cluster_name)
-        cluster = self._map.api.get_one_cluster(cluster_id.project_id, cluster_id.name)
-        print(f"deleting cluster: {cluster_id.pretty()} (project : {self._map.get_project_name(cluster.project_id)})")
+        print(f"deleting cluster: {cluster_id.pretty()} (project : {self._map.get_project_name(cluster_id.project_id)})")
         if Commands.prompt("Are you sure: ", "Y"):
             cluster = self._map.api.get_one_cluster(cluster_id.project_id, cluster_id.name)
             self._map.api.delete_cluster(cluster)
+            print("delete completed")
+        else:
+            print("delete aborted")
+
+    def delete_project_cmd(self, project_arg: str):
+        org_id, project_name = ClusterID.parse_id_name(project_arg)
+        print(f"deleting project: {project_arg} (project name : {self._map.get_project_id(project_name)})")
+        if Commands.prompt("Are you sure: ", "Y"):
+            project = self._map.api.get_one_project(self._map.get_project_id(project_name))
+            self._map.api.delete_project(project.id)
             print("delete completed")
         else:
             print("delete aborted")

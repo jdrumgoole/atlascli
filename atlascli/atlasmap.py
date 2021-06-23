@@ -1,3 +1,4 @@
+import itertools
 from typing import Dict, List, Generator
 
 from atlascli.atlasapi import AtlasAPI
@@ -6,6 +7,7 @@ from atlascli.atlaskey import AtlasKey
 from atlascli.atlasorganization import AtlasOrganization
 from atlascli.atlasproject import AtlasProject
 from atlascli.clusterid import ClusterID
+
 
 class AtlasMap:
     #
@@ -20,11 +22,14 @@ class AtlasMap:
 
         self._org = org
         self._populate = populate
+        self._clusters : List[AtlasCluster] = None
+        self._project_map : Dict[str, Dict] = None  # map of all project ids to projects
 
-        self._clusters = []
-        self._projects = {}
-        # pprint.pprint(self._projects)
-        self._project_cluster_map = {}
+        self._project_cluster_map: Dict[str, Dict[str, AtlasCluster]] = {}
+        # map from project id to a dict of clusters
+        # because cluster names are not unique across and organization
+        # we have to key each collection of clusters under a specific project id.
+
 
         if api:
             self._api = api
@@ -42,50 +47,55 @@ class AtlasMap:
         return self._api
 
     @property
+    def projects(self):
+        if self._project_map is None:
+            self._project_map = {x.id: x for x in self._api.get_projects()}
+        return list(self._project_map.values())
+
+    @property
     def clusters(self):
-        if self._clusters:
-            return self._clusters
-        else:
-            return self.populate_clusters()
+        if self._clusters is None:
+            clusters = []
+            if len(self._project_cluster_map) == 0:
+                self.populate_cluster_map()
+
+            # return list(itertools.chain.from_iterable(self._project_cluster_map.values()))
+            for project_id, cluster_dict in self._project_cluster_map.items():
+                for cluster_name, cluster in cluster_dict.items():
+                    clusters.append(cluster)
+
+            self._clusters = clusters
+
+        return self._clusters
 
     @property
     def organization(self):
         return self._org
 
-    def populate(self):
-        self.populate_projects()
-        self.populate_clusters()
+    # def populate(self):
+    #     self.populate_clusters()
 
     @property
     def project_cluster_map(self):
-        if self._project_cluster_map:
-            return self._project_cluster_map
-        else:
-            self.populate_clusters()
-            return self._project_cluster_map
+        if len(self._project_cluster_map) == 0:
+            self.populate_cluster_map()
+        return self._project_cluster_map
 
-    def populate_projects(self):
-        new_projects = {}
-        for project in self._api.get_projects():
-            new_projects[project.id] = project
-        self._projects = new_projects
-        return self._projects
-
-    def populate_clusters(self):
-        new_clusters = []
+    def populate_cluster_map(self):
+        new_projects_map = {}
         new_project_cluster_map = {}
-        for project in self.projects.values():
-            clusters = list(self._api.get_clusters(project.id))
-            new_clusters.extend(clusters)
-            new_project_cluster_map[project.id] = clusters
+        for project in self._api.get_projects():
+            new_projects_map[project.id] = project
+            new_project_cluster_map[project.id] = {}
+            for cluster in self._api.get_clusters(project.id):
+                new_project_cluster_map[project.id][cluster.name] = cluster
+            assert len(new_projects_map) == len(new_project_cluster_map)
 
-        self._clusters = new_clusters
         self._project_cluster_map = new_project_cluster_map
-
-        return self._clusters
+        self._project_map = new_projects_map
 
     def is_project_id(self, project_id: str) -> bool:
-        return project_id in self.projects
+        return project_id in [ x.id for x in self.projects]
 
     def is_cluster_name(self, cluster_name: str) -> bool:
         # print(f"is_cluster_name({cluster_name})")
@@ -105,40 +115,33 @@ class AtlasMap:
 
     def get_cluster_project_ids(self, cluster_name: str):
         project_ids = []
-        for project_id, project in self.projects.items():
-            for cluster in self.project_cluster_map[project_id]:
-                if cluster.name == cluster_name:
-                    project_ids.append(project.id)
+        for project_id, cluster_map in self.project_cluster_map.items():
+            for name, cluster in cluster_map.items():
+                if name == cluster_name:
+                    project_ids.append(project_id)
         return project_ids
 
     def get_project_ids(self) -> List[str]:
-        return list(self.projects.keys())
+        return [ x.id for x in self.projects]
 
     def get_one_project(self, project_id:str) -> AtlasProject:
-        return self.projects[project_id]
+        return self._project_map[project_id]
 
     def get_projects(self) -> Dict[str, AtlasProject]:
-        return list(self.projects.values())
+        return self._project_map
 
     def get_project_id(self, project_name: str):
-        for i in self.projects.values():
+        for i in self.projects:
+            #print(i.name)
             if i.name == project_name:
                 return i.id
         return None
 
     def get_project_name(self, project_id: str):
-        for i in self.projects.values():
-            # pprint.pprint(i.id)
+        for i in self.projects:
             if i.id == project_id:
                 return i.name
         return None
-
-    @property
-    def projects(self):
-        if self._projects:
-            return self._projects
-        else:
-            return self.populate_projects()
 
     def get_cluster(self, cluster_name: str, project_id: object = None) -> List[AtlasCluster]:
         #
@@ -169,6 +172,11 @@ class AtlasMap:
             elif project_id == c.project_id:
                 yield c
 
+    def create_cluster(self, project_id:str, cluster_name: str) -> AtlasCluster:
+        c = self._api.create_cluster(project_id, cluster_name)
+        self._project_cluster_map[project_id]
+
+
     def parse_cluster_id(self, cluster_str: str) -> ClusterID:
         cluster_id = ClusterID.parse(cluster_str, throw_exception=True)
         if self.is_project_id(cluster_id.project_id):
@@ -181,8 +189,8 @@ class AtlasMap:
 
     def pprint(self):
         print(self._org.summary())
-        for project in self.projects.values():
-            print(f" Project: {project.pretty_id_name():<40}")
-            for cluster in self.project_cluster_map[project.id]:
-                print(f"  Cluster: {cluster.summary()}")
+        for project in self.projects:
+            print(f" Project: {project.pretty_project_id():<40}")
+            for v in self.project_cluster_map[project.id].values():
+                print(f"  Cluster: {v.summary()}")
 

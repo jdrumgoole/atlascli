@@ -88,20 +88,24 @@ class AtlasCluster(AtlasResource):
     def status(self) -> str:
         if self.resource["stateName"] == "REPAIRING":
             if self.is_paused():
-                return f"{Fore.LIGHTRED_EX}Pausing...{Fore.RESET}"
+                return f"{Fore.LIGHTRED_EX}pausing...{Fore.RESET}"
             else:
-                return f"{Fore.LIGHTRED_EX}Resuming...{Fore.RESET}"
+                return f"{Fore.LIGHTRED_EX}resuming...{Fore.RESET}"
         elif self.resource["stateName"] == "CREATING":
-            return f"{Fore.LIGHTRED_EX}Creating...{Fore.RESET}"
+            return f"{Fore.LIGHTRED_EX}creating...{Fore.RESET}"
         elif self.resource["stateName"] == "DELETING":
-            return f"{Fore.LIGHTRED_EX}Deleting...{Fore.RESET}"
+            return f"{Fore.LIGHTRED_EX}deleting...{Fore.RESET}"
         elif self.resource["stateName"] == "IDLE":
             if self.is_paused():
-                return f"{Fore.LIGHTBLUE_EX}Paused{Fore.RESET}"
+                return f"{Fore.LIGHTBLUE_EX}paused{Fore.RESET}"
             else:
                 return f"{Fore.RED}running{Fore.RESET}"
         else:
             return f"{self.resource['stateName']}"
+
+    @property
+    def state(self):
+        return self.resource['stateName']
 
     def short_name(self):
         return f"{self.project_id}:{self.name}"
