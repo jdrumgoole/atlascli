@@ -7,8 +7,6 @@ from atlascli.atlasapi import AtlasAPI
 from atlascli.atlascluster import AtlasCluster
 from atlascli.errors import AtlasGetError
 from atlascli.config import Config
-from atlascli.atlaskey import AtlasKey
-
 
 class TestAPI(unittest.TestCase):
 
@@ -18,12 +16,12 @@ class TestAPI(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._cfg = Config()
-        public_key, private_key = self._cfg.get_keys("Dummy Organisation")
+        public_key, private_key = self._cfg.get_config_file_keys("Dummy Organisation")
         assert public_key is not None
         assert private_key is not None
 
         self._api = AtlasAPI()
-        self._api.authenticate(AtlasKey(public_key=public_key, private_key=private_key))
+        self._api.authenticate(public_key=public_key, private_key=private_key)
 
     def setUp(self) -> None:
         pass

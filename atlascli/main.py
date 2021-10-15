@@ -24,6 +24,8 @@ Paused or Resumed
 Author: Joe.Drumgoole@mongodb.com
 """
 import argparse
+import configparser
+
 import requests
 import os
 import pprint
@@ -32,14 +34,12 @@ import logging
 
 from colorama import init, Fore
 
-from atlascli.atlascluster import AtlasCluster
 from atlascli.atlaskey import AtlasKey
 from atlascli.clusterid import ClusterID, ProjectID
-from atlascli.config import Config, initialise
 
 from atlascli.errors import AtlasError, AtlasGetError
 from atlascli.atlasapi import AtlasAPI
-from atlascli.config import Config
+from atlascli.config import Config, initialise
 from atlascli.version import __VERSION__
 
 from atlascli.atlasmap import AtlasMap
@@ -61,7 +61,7 @@ def main(argv : list[str] = None):
                                              "Can be read from the environment variable ATLAS_PRIVATE_KEY")
 
     parser.add_argument("-cfg", "--configfile", help="path to a config file containing API keys")
-    parser.add_argument("-org", "--organization", help="Get API keys associated with this organization")
+    parser.add_argument("-do", "--defaultorg", help="Use API keys associated with this organization")
 
     # parser.add_argument("--defaultcluster", default=False, action="store_true",
     #                     help="Print out the default cluster we use to create clusters with the create command")
@@ -93,24 +93,28 @@ def main(argv : list[str] = None):
     resume_parser.add_argument('-c', '--cluster_name', type=ClusterID.validate_cluster_name, nargs="*",
                                help="List of Cluster names to resume")
 
-    list_parser = subparsers.add_parser('list', help="List organizations, projects and/or clusters")
+    list_parser = subparsers.add_parser(name='list', help="List organizations, projects and/or clusters")
 
     list_parser.add_argument('-c', '--cluster_name', type=ClusterID.validate_cluster_name, nargs="*",
                              help="List of Cluster names to print")
 
     list_parser.add_argument('-p', '--project_id', type=ProjectID.canonical_project_id, nargs="*",
                                help="List of project IDs to print")
+    
+    list_parser.add_argument("-org", "--organization", default=False, action="store_true", help="list the organization")
 
-    list_parser.add_argument('-org', '--organization', default=False, action="store_true",
-                             help="print out the organization")
+    # list_parser.add_argument('-org', '--organization', default=False, action="store_true",
+    #                          help="print out the organization")
 
     list_parser.add_argument('-o', '--output', type=argparse.FileType('w', encoding='UTF-8'),
                              help="Send the output of this list command to a file")
 
-    create_parser = subparsers.add_parser('create', help="Create a cluster")
+    create_parser = subparsers.add_parser('create', help="Create an Atlas project and/or cluster")
+
+    # create_parser.add_argument("-t","--type", choices=("cluster", "project"))
 
     create_parser.add_argument("-c", "--cluster_name", type=ClusterID.canonical_name,
-                               help="specify the name of the cluster as <project_id>:<cluster_name>")
+                               help="Specify the name of a cluster")
 
     create_parser.add_argument("-p", "--project_name", type=str,
                                help="specify the name of the project as <org_id>:<cluster_name>")
@@ -172,22 +176,32 @@ def main(argv : list[str] = None):
     # Stop noisy urllib3 info logs
     logging.getLogger("requests").setLevel(logging.WARNING)
 
-    if args.configfile:
+    try:
         config = Config(filename=args.configfile)
-    else:
-        config = Config()
+    except configparser.MissingSectionHeaderError as e:
+        print(f"{Fore.RED}Config File Error in: {Fore.RESET}{Fore.LIGHTWHITE_EX}{args.configfile}")
+        print(e)
+        sys.exit(1)
 
-    if args.organization:
-        org = args.org
-    else:
-        org = config.get_default_org()
+    api = AtlasAPI()
 
-    cfg_public_key, cfg_private_key = config.get_keys(org)
+    api.authenticate(AtlasKey(config.get_public_key(), config.get_private_key()))
+
+    try:
+        org = api.get_this_organization()
+    except AtlasError:
+        raise SystemExit(f"Your Atlas programmatic keys may be invalid.  Please check the values for "
+                         f"ATLAS_PRIVATE_KEY and ATLAS_PUBLIC_KEY or the contents of your"
+                         f"configuration file {Fore.LIGHTWHITE_EX}{config.filename}")
+
+    atlas_map = AtlasMap(org, api)
+    commands = Commands(atlas_map)
 
     if args.subparser_name == "config":
 
         if args.initialize:
             config = initialise()
+
 
         if args.defaultorg:
             if not config.is_org(args.defaultorg):
@@ -203,42 +217,6 @@ def main(argv : list[str] = None):
                         print(f"No such organization in config file: {config.filename}")
             else:
                 config.pprint()
-
-    if args.publickey:
-        public_key = args.publickey
-    else:
-        public_key = os.getenv("ATLAS_PUBLIC_KEY")
-        if public_key is None:
-            if cfg_public_key:
-                public_key = cfg_public_key
-            else:
-                raise SystemExit("you must specify an ATLAS public key via --publickey arg "
-                                 "or in the atlascli.cfg file "
-                                 "or the environment variable ATLAS_PUBLIC_KEY")
-
-    if args.privatekey:
-        private_key = args.privatekey
-    else:
-        private_key = os.getenv("ATLAS_PRIVATE_KEY")
-        if private_key is None:
-            if cfg_private_key:
-                private_key = cfg_private_key
-            else:
-                raise SystemExit("you must specify an an ATLAS private key via --privatekey "
-                                 "or in the atlascli.cfg file " 
-                                 "arg or the environment variable ATLAS_PRIVATE_KEY")
-
-    api = AtlasAPI()
-    org = None
-    api.authenticate(AtlasKey(public_key, private_key))
-    try:
-        org = api.get_this_organization()
-    except AtlasError:
-        raise SystemExit("Your keys may be invalid.  Please check the values for "
-                         "ATLAS_PRIVATE_KEY and ATLAS_PUBLIC_KEY")
-
-    atlas_map = AtlasMap(org, api)
-    commands = Commands(atlas_map)
 
     if args.subparser_name == "clone":
         commands.clone_cluster_cmd(args.cluster_name, args.output)
@@ -268,7 +246,6 @@ def main(argv : list[str] = None):
         commands.resume_cmd(args.cluster_name)
 
     if args.subparser_name == "list":
-
         if args.cluster_name is not None and (len(args.cluster_name) == 0):
             cluster_names = list(atlas_map.get_cluster_names())
         else:
@@ -284,16 +261,24 @@ if __name__ == "__main__":
     try:
         main(sys.argv[1:])
     except AtlasError as e:
-        print(f"{Fore.RED}AtlasError:")
+        print(f"{Fore.RED}Atlas Error:")
         print(e)
         raise
         # print("Have you set ATLAS_PRIVATE_KEY and ATLAS_PUBLIC_KEY? You can pass keys on the command line with")
         # print("--publickey and --privatekey")
         sys.exit(1)
     except AtlasGetError as e:
-        print(f"{Fore.RED}AtlasGetError:")
+        print(f"{Fore.RED}Atlas Request Error:")
         print(e)
         sys.exit(1)
+    except requests.exceptions.ConnectionError as e:
+        print(f"{Fore.RED}Connection Error:")
+        print(e)
+    except ValueError as e:
+        print(f"{Fore.RED}Value Error: {Fore.RESET}", end="")
+        print(e)
+        sys.exit(1)
+
     except KeyboardInterrupt:
         print(f"{Fore.RED}Ctrl-C...exiting")
         sys.exit(1)

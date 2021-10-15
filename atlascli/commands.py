@@ -9,6 +9,7 @@ from atlascli.atlasresource import AtlasResource, inputhighlight
 from atlascli.clusterid import ClusterID
 
 from colorama import init, Fore
+import click
 
 
 class Commands:
@@ -60,7 +61,6 @@ class Commands:
         except ValueError as e:
             raise SystemExit(e)
 
-
     @staticmethod
     def default_cluster_cmd(output_file=None):
         default_cluster = AtlasCluster.default_single_region_cluster()
@@ -83,18 +83,14 @@ class Commands:
             else:
                 print(new_cluster.pretty())
 
-    def create_project_cmd(self, project_arg:str, output_file=None):
-        org_id, project_name = ClusterID.parse_id_name(project_arg)
-        if org_id == self._map.organization.id:
-            print(f"Creating project {org_id}:{project_name}")
-            project = self._map.api.create_project(org_id, project_name)
-            if output_file:
-                json.dump(output_file, project)
-                print(f"Cluster config created in '{Fore.MAGENTA}{output_file.name}{Fore.RESET}'")
-            else:
-                print(project.pretty())
+    def create_project_cmd(self, project_name:str, output_file=None):
+        print(f"Creating project {self._map.org_id}:{project_name}")
+        project = self._map.api.create_project(self._map.org_id, project_name)
+        if output_file:
+            json.dump(output_file, project)
+            print(f"Cluster config created in '{Fore.MAGENTA}{output_file.name}{Fore.RESET}'")
         else:
-            print(f"No such organization ID {org_id}")
+            print(project.pretty())
 
     @staticmethod
     def template_cluster_cmd(cfg_file, output_file=None):
@@ -126,9 +122,8 @@ class Commands:
         else:
             print("delete aborted")
 
-    def delete_project_cmd(self, project_arg: str):
-        org_id, project_name = ClusterID.parse_id_name(project_arg)
-        print(f"deleting project: {project_arg} (project name : {self._map.get_project_id(project_name)})")
+    def delete_project_cmd(self, project_name: str):
+        print(f"deleting project: {Fore.LIGHTWHITE_EX}{project_name}{Fore.RESET} (project ID : {self._map.get_project_id(project_name)})")
         if Commands.prompt("Are you sure: ", "Y"):
             project = self._map.api.get_one_project(self._map.get_project_id(project_name))
             self._map.api.delete_project(project.id)
@@ -164,7 +159,12 @@ class Commands:
                     print(f"\nProject: '{cluster_id.project_id}' Cluster: '{cluster_id.name}'")
                     print(cluster.pretty())
 
-    def list_cmd(self, org:str, project_ids : List[str], cluster_names: List[str], output=None):
+    @click.command()
+    @click.option("--name", type=str, default="Bongo")
+    def list(self, name):
+        click.echo(f"name: {name}")
+        
+    def list_cmd(self, org:bool, project_ids : List[str], cluster_names: List[str], output=None):
         if not org and not project_ids and not cluster_names:
             self._map.pprint()
         else:

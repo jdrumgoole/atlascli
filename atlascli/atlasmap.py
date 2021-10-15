@@ -76,6 +76,10 @@ class AtlasMap:
     #     self.populate_clusters()
 
     @property
+    def org_id(self):
+        return self._org.id
+
+    @property
     def project_cluster_map(self):
         if len(self._project_cluster_map) == 0:
             self.populate_cluster_map()

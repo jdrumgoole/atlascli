@@ -45,8 +45,8 @@ class AtlasAPI:
         if self._page_size < 1 or self._page_size > 500 :
             raise AtlasInitialisationError("'page_size' must be between 1 and 500")
 
-    def authenticate(self, key: AtlasKey = None):
-        if not key:
+    def authenticate(self, public_key: str = None, private_key: str = None):
+        if public_key is None or private_key is None:
             key = AtlasKey.get_from_env()
         self._auth = HTTPDigestAuth(key.public_key, key.private_key)
 

@@ -76,7 +76,7 @@ class TestClusterID(unittest.TestCase):
         canonical_id = ClusterID.canonical_name(f"{pid}:hello")
         self.assertEqual(canonical_id, f"{pid}:hello")
 
-    def test_project_id(self, ):
+    def test_project_id(self):
 
         pid = "5b9a2b39d383ad11eab32cf8"
         p = ProjectID.validate_project_id(pid)
@@ -92,7 +92,8 @@ class TestClusterID(unittest.TestCase):
             ProjectID.validate_project_id("5b9a2b39d38XXX11eab32cf", throw_exception=True)  # not all hex
 
 
-
+    def test_canonical_name(self):
+        with s
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 import unittest
 import sys
 
+from atlascli.atlasapi import AtlasAPI
 from atlascli.main import main
 from atlascli.atlasmap import AtlasMap
 
@@ -34,6 +35,10 @@ class TestCommands(unittest.TestCase):
         self.cmd("list", "-p", "5a141a774e65811a132a8010")
         self.cmd("list", "-p", "5a141a774e65811a132a8010", "-c")
 
+    def test_create_project(self):
+        name = AtlasAPI.random_name()
+        self.cmd("create", "-p", name)
+        self
     def test_create(self):
         # Assume dummy organization has been configured in atlascli.cfg
         #

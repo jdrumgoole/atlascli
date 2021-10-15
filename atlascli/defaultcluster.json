@@ -1,0 +1,14 @@
+{
+  "diskSizeGB": 100,
+  "numShards": 1,
+  "providerSettings": {
+    "providerName": "AWS",
+    "diskIOPS": 300,
+    "instanceSizeName": "M40",
+    "regionName": "US_EAST_1"
+  },
+  "replicationFactor": 3,
+  "autoScaling": {
+    "diskGBEnabled": true
+  }
+}
